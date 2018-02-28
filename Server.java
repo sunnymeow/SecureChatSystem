@@ -1,7 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.security.PublicKey;
-import java.util.Arrays;
 
 public class Server  {
 	public static void main (String args[]) throws Exception {
@@ -35,7 +33,7 @@ public class Server  {
 		System.out.println("PHASE 1.1 " + cipherSuite);
 		
 		// ******************* PHASE 1.2: send :kaok cipherSuite ******************* //
-		cipherSuite = "ecdh-secp224r1+nocert+aes/cbc/nopadding";					//////// hardcoding 
+		cipherSuite = "ecdh-secp224r1+nocert+aes128/cbc";					//////// hardcoding 
 		System.out.println("PHASE 1.2 :kaok "+ cipherSuite);
 		out.writeUTF(":kaok "+ cipherSuite);
 		out.flush();
@@ -48,8 +46,8 @@ public class Server  {
 		keyEstAlgor = trim3[0];
 		keyEstSpec = trim3[1];
 		integrity = trim2[1];
-		symCipher = trim2[2]+"/nopadding";				//////// hardcoding 
-
+		symCipher = trim2[2];				
+		
 		// ******************* PHASE 1.3: send :ka1 based64 encoded public key ******************* //
 		KeyExchange myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
 		System.out.println("PHASE 1.3 :ka1 "+ myKey.getEncodedPublic().toString());	//////// hardcoding :ka1

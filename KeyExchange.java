@@ -1,12 +1,6 @@
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import java.util.Arrays;
-import java.util.Base64;
-
 
 public class KeyExchange {
 	private static PrivateKey key_private;
@@ -65,9 +59,6 @@ public class KeyExchange {
      */
 	public void doECDH(byte[] receivedPublicKey) throws Exception{
 		// decoded public key
-//		byte[] decodedKey = Base64.getDecoder().decode(receivedPublicKey);
-//		PublicKey originalKey = (PublicKey) new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
-	
 		KeyFactory keyFactory = KeyFactory.getInstance("EC");
 		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(receivedPublicKey);
 		PublicKey pubKey = keyFactory.generatePublic(keySpec);

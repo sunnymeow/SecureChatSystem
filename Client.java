@@ -1,7 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.security.PublicKey;
-import java.util.Arrays;
 
 public class Client {
     public static void main (String args[]) throws Exception {
@@ -23,7 +21,7 @@ public class Client {
 		BufferedReader buf = new BufferedReader(new InputStreamReader(System.in));
 		
 		// ******************* PHASE 1: send :ka cipherSuite ******************* //
-		String cipherSuite = "ecdh-secp224r1+nocert+aes/cbc/nopadding";					//////// hardcoding 
+		String cipherSuite = "ecdh-secp224r1+nocert+aes128/cbc";					//////// hardcoding 
 		String keyEstAlgor = "";		// key establish algorithm
 		String keyEstSpec = "";		// specific parameter for key establish algorithm
 		String integrity = "";		// a means for ensuring integrity of public key
@@ -56,8 +54,6 @@ public class Client {
 		
 		// ******************* PHASE 2.2: send :ka1 based64 encoded public key ******************* //
 		KeyExchange myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
-//		System.out.println("PHASE 2.2 :ka1 "+ myKey.getEncodedPublic());
-//		out.writeUTF(":ka1 " + myKey.getEncodedPublic());
 		System.out.println("PHASE 2.2 :ka1 "+ myKey.getEncodedPublic().toString());		//////// hardcoding :ka1
 		out.writeInt(myKey.getEncodedPublic().length);
 		out.write(myKey.getEncodedPublic());
