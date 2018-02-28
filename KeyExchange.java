@@ -43,13 +43,9 @@ public class KeyExchange {
      * 
      * @return the base64 encoded string of public key 
      */
-//	public String getEncodedPublic() {
-//		return Base64.getEncoder().encodeToString(key_public.getEncoded());
-//	}
 	public byte[] getEncodedPublic() {
 		return key_public.getEncoded();
-	}
-	
+	}	
 	
 	/**
      * do the EDCH and construct shared secret
@@ -68,7 +64,7 @@ public class KeyExchange {
 		KeyAgreement ecdh = KeyAgreement.getInstance(keyEstAlgor);
 		ecdh.init(key_private);
 		ecdh.doPhase(pubKey, true);
-		
+		 
 		// generate secret key
 		byte[] oriSecret = ecdh.generateSecret();
 		System.out.println("Original secret key: " + oriSecret.toString());

@@ -33,7 +33,7 @@ public class Server  {
 		System.out.println("PHASE 1.1 " + cipherSuite);
 		
 		// ******************* PHASE 1.2: send :kaok cipherSuite ******************* //
-		cipherSuite = "ecdh-secp224r1+nocert+aes128/cbc";					//////// hardcoding 
+		cipherSuite = "ecdh-secp224r1+nocert+AES/CBC/PKCS5Padding";					//////// hardcoding 
 		System.out.println("PHASE 1.2 :kaok "+ cipherSuite);
 		out.writeUTF(":kaok "+ cipherSuite);
 		out.flush();

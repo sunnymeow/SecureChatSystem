@@ -3,10 +3,8 @@ import javax.crypto.spec.*;
 import java.util.Base64;
 
 public class Encryption {
-//	private static SecretKeySpec secretKey;
 	private static SecretKey secretKey;
 	private String algorithm;
-//	private static byte[] keyBytes = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	private static byte[] iv = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	
 	/**
@@ -27,13 +25,9 @@ public class Encryption {
      */
 	public String encrypt(String plainText) throws Exception {
 		// initialize cipher with secret key
-		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		Cipher cipher = Cipher.getInstance(algorithm);
 		IvParameterSpec ivspec = new IvParameterSpec(iv);
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
-		
-//		// initialize cipher with secret key
-//		Cipher cipher = Cipher.getInstance(algorithm);
-//		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 		
 		// encrypt plain text
 		byte[] cipherText = cipher.doFinal(plainText.getBytes());
@@ -48,14 +42,10 @@ public class Encryption {
      */
 	public String decrypt(String cipherText) throws Exception {
 		// initialize cipher with secret key
-		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		Cipher cipher = Cipher.getInstance(algorithm);
 		IvParameterSpec ivspec = new IvParameterSpec(iv);
 		cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-		
-//		// initialize cipher with secret key
-//		Cipher cipher = Cipher.getInstance(algorithm);
-//		cipher.init(Cipher.DECRYPT_MODE, secretKey);
-		
+
 		// decrypt cipher text
 		byte[] decoder  = Base64.getDecoder().decode(cipherText);
 		byte[] plainText = cipher.doFinal(decoder);

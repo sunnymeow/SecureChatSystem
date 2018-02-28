@@ -21,7 +21,7 @@ public class Client {
 		BufferedReader buf = new BufferedReader(new InputStreamReader(System.in));
 		
 		// ******************* PHASE 1: send :ka cipherSuite ******************* //
-		String cipherSuite = "ecdh-secp224r1+nocert+aes128/cbc";					//////// hardcoding 
+		String cipherSuite = "ecdh-secp224r1+nocert+AES/CBC/PKCS5Padding";					
 		String keyEstAlgor = "";		// key establish algorithm
 		String keyEstSpec = "";		// specific parameter for key establish algorithm
 		String integrity = "";		// a means for ensuring integrity of public key
