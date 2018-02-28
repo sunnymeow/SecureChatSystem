@@ -29,8 +29,10 @@ public class KeyExchange {
 	    key_public = key_pair.getPublic();
 	    
 	    // display key pair
+	    System.out.println("\n******************* KeyExchange constructor *******************");
 	    System.out.println("Private key: " + key_private.toString());
 	    System.out.println("Public key: " + key_public.toString());
+	    System.out.println("***************************************************************\n");
 	}
 	
 	/**
@@ -66,9 +68,13 @@ public class KeyExchange {
 	public SecretKey getSecret() {
 		return key_secret;
 	}
-	
-	
-	
-	
 
+	/**
+     * get public key 
+     * 
+     * @return the uncoded public key 
+     */
+	public PublicKey getPublic() {
+		return key_public;
+	}
 }
