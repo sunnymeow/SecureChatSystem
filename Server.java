@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
-import java.util.concurrent.TimeUnit;
+import java.security.PublicKey;
+import java.util.Arrays;
 
 public class Server  {
 	public static void main (String args[]) throws Exception {
@@ -12,13 +13,13 @@ public class Server  {
 		System.out.println("******************************************************");
 		
 		// socket link to the server socket with its port number
-		ServerSocket serSoc = new ServerSocket(4321);
+		ServerSocket serSoc = new ServerSocket(1234);
 		Socket soc = serSoc.accept();
 			
 		// stream for getting input and output
 		DataInputStream in = new DataInputStream(soc.getInputStream());
 		DataOutputStream out = new DataOutputStream(soc.getOutputStream());
-		
+
 		// buffer to store message from keyboard input
 		BufferedReader buf = new BufferedReader(new InputStreamReader(System.in));
 	
@@ -32,14 +33,12 @@ public class Server  {
 				
 		cipherSuite = in.readUTF();
 		System.out.println("PHASE 1.1 " + cipherSuite);
-		TimeUnit.SECONDS.sleep(3);
 		
 		// ******************* PHASE 1.2: send :kaok cipherSuite ******************* //
-		cipherSuite = "ecdh-secp224r1+nocert+aes128/cbc";
+		cipherSuite = "ecdh-secp224r1+nocert+aes/cbc/nopadding";					//////// hardcoding 
 		System.out.println("PHASE 1.2 :kaok "+ cipherSuite);
 		out.writeUTF(":kaok "+ cipherSuite);
 		out.flush();
-		TimeUnit.SECONDS.sleep(3);
 				
 		// separate tokens
 		String[] trim2 = cipherSuite.split("\\+");		// separate tokens
@@ -49,63 +48,65 @@ public class Server  {
 		keyEstAlgor = trim3[0];
 		keyEstSpec = trim3[1];
 		integrity = trim2[1];
-		symCipher = trim2[2];
+		symCipher = trim2[2]+"/nopadding";				//////// hardcoding 
 
 		// ******************* PHASE 1.3: send :ka1 based64 encoded public key ******************* //
-		KeyExchange myKey = new KeyExchange(keyEstSpec);
-		System.out.println("PHASE 2.2 encoded "+ myKey.getEncodedPublic().toString());
-		System.out.println("PHASE 2.2 :ka1 "+ myKey.getPublic().toString());
-		out.writeUTF(":ka1 "+ myKey.getPublic().toString());
-		TimeUnit.SECONDS.sleep(3);
+		KeyExchange myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
+		System.out.println("PHASE 1.3 :ka1 "+ myKey.getEncodedPublic().toString());	//////// hardcoding :ka1
+		out.writeInt(myKey.getEncodedPublic().length);
+		out.write(myKey.getEncodedPublic());
+		out.flush();
 		
 		// ******************* PHASE 3.1: receive :ka1 client's encoded public key ******************* //
-		String clientPublic = in.readUTF();
-		System.out.println("PHASE 3.1 " + clientPublic);
-		TimeUnit.SECONDS.sleep(3);
+		byte[] clientPublic = new byte[in.readInt()];
+		in.readFully(clientPublic);
+		System.out.println("PHASE 3.1 :ka1 " + clientPublic.toString());			//////// hardcoding :ka1
 		
+		// ******************* PHASE 3.2: generate shared secret ******************* //
+		myKey.doECDH(clientPublic);
+			
+		// ******************* PHASE 4: chat w/ msg encryption ******************* //	
+		// strings to hold conversation contents
+		String msgIn = "";
+		String msgOut = "";
+		String msgSecure = "";
+				
+		// initialize a secure conversation object
+		Encryption cov = new Encryption(myKey.getSecret(), symCipher);
 		
-//		// ******************* PHASE 4: chat w/ msg encryption ******************* //	
-//		// strings to hold conversation contents
-//		String msgIn = "";
-//		String msgOut = "";
-//		String msgSecure = "";
-//				
-//		// initialize a secure conversation object
-//		Encryption cov = new Encryption();
-//		
-//		// terminate chat if server says "end"
-//		while(!msgOut.equals("bye")) {
-//			// read and decrypt client's message 
-//			msgIn = in.readUTF();
-//			msgSecure = cov.decrypt(msgIn);			
-//			System.out.print("Friend: ");
-//			System.out.println(msgSecure);
-//			
-//			// display the encrypted message from client before decryption
-//			System.out.println("(Decrypted from cipher text: " + msgIn + ")");			
-//			
-//			if (msgSecure.equals("bye")) {
-//				// terminate chat if client says "end"
-//				break;
-//			}
-//			else {
-//				// read keyboard input for server's message
-//				System.out.print("You: ");
-//				msgOut = buf.readLine();
-//				
-//				// encrypt and display server's encrypted message
-//				msgSecure = cov.encrypt(msgOut);
-//				System.out.println("(Encrypted into cipher text: " + msgSecure + ")");
-//				
-//				// sent the encrypted message to client
-//				out.writeUTF(msgSecure);
-//				out.flush();
-//			}
-//		}
-//	
-//		in.close();
-//		out.close();
-//		soc.close();
-//		System.out.println("\n************ Thanks for chatting! ************\n");
+		// terminate chat if server says "end"
+		while(!msgOut.equals("bye")) {
+			// read and decrypt client's message 
+			msgIn = in.readUTF();
+			msgSecure = cov.decrypt(msgIn);			
+			System.out.print("Friend: ");
+			System.out.println(msgSecure);
+			
+			// display the encrypted message from client before decryption
+			System.out.println("(Decrypted from cipher text: " + msgIn + ")");			
+			
+			if (msgSecure.equals("bye")) {
+				// terminate chat if client says "end"
+				break;
+			}
+			else {
+				// read keyboard input for server's message
+				System.out.print("You: ");
+				msgOut = buf.readLine();
+				
+				// encrypt and display server's encrypted message
+				msgSecure = cov.encrypt(msgOut);
+				System.out.println("(Encrypted into cipher text: " + msgSecure + ")");
+				
+				// sent the encrypted message to client
+				out.writeUTF(msgSecure);
+				out.flush();
+			}
+		}
+	
+		in.close();
+		out.close();
+		soc.close();
+		System.out.println("\n************ Thanks for chatting! ************\n");
     }
 }

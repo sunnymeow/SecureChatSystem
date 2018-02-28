@@ -3,59 +3,64 @@ import javax.crypto.spec.*;
 import java.util.Base64;
 
 public class Encryption {
-	private static SecretKeySpec secretKey;
-	private static String algorithm = "AES";
-	private static byte[] keyBytes = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+//	private static SecretKeySpec secretKey;
+	private static SecretKey secretKey;
+	private String algorithm;
+//	private static byte[] keyBytes = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	private static byte[] iv = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	
 	/**
      * Initialize the secretKey with keyBytes
      *
      */
-	public Encryption () {
+	public Encryption(byte[] secretBytes, String algorithm) {
 		// secret key initialization with key bytes of 16 zeros
-	    secretKey = new SecretKeySpec(keyBytes, algorithm);
+	    secretKey = new SecretKeySpec(secretBytes, "AES");
+		this.algorithm = algorithm;
 	}
 	
 	/**
      * Encrypt a string with AES algorithm.
      *
-     * @param message is a string
-     * @return the encrypted string
+     * @param message is the plain text
+     * @return the encrypted cipher text
      */
-	public String encrypt(String message) throws Exception {
+	public String encrypt(String plainText) throws Exception {
 		// initialize cipher with secret key
-		Cipher cipher = Cipher.getInstance(algorithm+"/CBC/PKCS5Padding");
+		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 		IvParameterSpec ivspec = new IvParameterSpec(iv);
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
 		
-		// encrypt plain text
-		byte[] cipherText = cipher.doFinal(message.getBytes());
+//		// initialize cipher with secret key
+//		Cipher cipher = Cipher.getInstance(algorithm);
+//		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 		
+		// encrypt plain text
+		byte[] cipherText = cipher.doFinal(plainText.getBytes());
 		return Base64.getEncoder().encodeToString(cipherText);
 	}
 	
 	/**
      * Decrypt a string with AES algorithm.
      *
-     * @param message is a string
-     * @return the decrypted string
+     * @param message is the cipher text
+     * @return the decrypted plain text
      */
-	public String decrypt(String message) throws Exception {
+	public String decrypt(String cipherText) throws Exception {
 		// initialize cipher with secret key
-		Cipher cipher = Cipher.getInstance(algorithm+"/CBC/PKCS5Padding");
+		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 		IvParameterSpec ivspec = new IvParameterSpec(iv);
 		cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
 		
+//		// initialize cipher with secret key
+//		Cipher cipher = Cipher.getInstance(algorithm);
+//		cipher.init(Cipher.DECRYPT_MODE, secretKey);
+		
 		// decrypt cipher text
-		byte[] decoder  = Base64.getDecoder().decode(message);
+		byte[] decoder  = Base64.getDecoder().decode(cipherText);
 		byte[] plainText = cipher.doFinal(decoder);
 		String str = new String(plainText, "UTF-8");
 		
 		return str;
 	}
-	
-
-	
-
 }
