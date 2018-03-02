@@ -1,5 +1,7 @@
 import javax.crypto.*;
 import javax.crypto.spec.*;
+
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 public class Encryption {
@@ -39,18 +41,26 @@ public class Encryption {
      *
      * @param message is the cipher text
      * @return the decrypted plain text
+	 * @throws NoSuchPaddingException 
+	 * @throws NoSuchAlgorithmException 
      */
-	public String decrypt(String cipherText) throws Exception {
-		// initialize cipher with secret key
-		Cipher cipher = Cipher.getInstance(algorithm);
-		IvParameterSpec ivspec = new IvParameterSpec(iv);
-		cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
+	public String decrypt(String cipherText) throws Exception, ErrorException {
+		byte[] plainText;
 
-		// decrypt cipher text
-		byte[] decoder  = Base64.getDecoder().decode(cipherText);
-		byte[] plainText = cipher.doFinal(decoder);
-		String str = new String(plainText, "UTF-8");
+		try {
+			// initialize cipher with secret key
+			Cipher cipher = Cipher.getInstance(algorithm);
+			IvParameterSpec ivspec = new IvParameterSpec(iv);
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
 		
+			// decrypt cipher text
+			byte[] decoder  = Base64.getDecoder().decode(cipherText);
+			plainText = cipher.doFinal(decoder);
+		} catch (Exception err) {
+			throw new ErrorException(":err DECRYPTION FAILED!\n");
+		} 
+		
+		String str = new String(plainText, "UTF-8");
 		return str;
 	}
 }
