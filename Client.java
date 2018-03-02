@@ -47,20 +47,37 @@ public class Client {
 		integrity = trim2[1];
 		symCipher = trim2[2];
 		
+//		// ******************* PHASE 3.1: receive :ka1 server's encoded public key ******************* //
+//		byte[] serverPublic = new byte[in.readInt()];
+//		in.readFully(serverPublic);
+//		System.out.println("PHASE 3.1 :ka1 " + serverPublic.toString());			//////// hardcoding :ka1
+//		
+//		// ******************* PHASE 2.2: send :ka1 based64 encoded public key ******************* //
+//		KeyExchange myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
+//		System.out.println("PHASE 2.2 :ka1 "+ myKey.getEncodedPublic().toString());		//////// hardcoding :ka1
+//		out.writeInt(myKey.getEncodedPublic().length);
+//		out.write(myKey.getEncodedPublic());
+//		out.flush();
+		
 		// ******************* PHASE 3.1: receive :ka1 server's encoded public key ******************* //
-		byte[] serverPublic = new byte[in.readInt()];
-		in.readFully(serverPublic);
-		System.out.println("PHASE 3.1 :ka1 " + serverPublic.toString());			//////// hardcoding :ka1
+		KeyExchange myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
+		byte[] ka1serverPublic = new byte[in.readInt()];
+		in.readFully(ka1serverPublic);
+		System.out.println("PHASE 3.1 :ka1 " + ka1serverPublic.toString());			//////// hardcoding :ka1
+		
+		String ka1 = new String(myKey.getKa1(ka1serverPublic));
+		System.out.println(ka1);
 		
 		// ******************* PHASE 2.2: send :ka1 based64 encoded public key ******************* //
-		KeyExchange myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
-		System.out.println("PHASE 2.2 :ka1 "+ myKey.getEncodedPublic().toString());		//////// hardcoding :ka1
-		out.writeInt(myKey.getEncodedPublic().length);
-		out.write(myKey.getEncodedPublic());
+		byte[] encodedPublic = myKey.getEncodedPublic();
+		byte[] ka1encodedPublic = myKey.addKa1(encodedPublic);
+		System.out.println("PHASE 2.2 :ka1 "+ encodedPublic.toString());		//////// hardcoding :ka1
+		out.writeInt(ka1encodedPublic.length);
+		out.write(ka1encodedPublic);
 		out.flush();
 		
 		// ******************* PHASE 3.2: generate shared secret ******************* //
-		myKey.doECDH(serverPublic);
+		myKey.doECDH(myKey.splitEncodedPublic(ka1serverPublic));
 		
 		// ******************* PHASE 4: chat w/ msg encryption ******************* //
 		// strings to hold conversation contents
