@@ -11,5 +11,6 @@ public class ClientInfo {
     public ClientListener mClientListener = null;
     public ClientSender mClientSender = null;
 	public Encryption mEncrption = null;
+	public String mAlias = null;
 
 }

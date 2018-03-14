@@ -1,13 +1,13 @@
-import java.nio.*;
+import java.io.*;
+import java.security.*;
+import java.security.cert.*;
 
 public class Help {
-	private static int ka1Length = ":ka1 ".length();
 
 	/**
      * check for matching strings
      * 
      * @param two strings to be check
-     * @return if matches, return TRUE; otherwise return FALSE
      */
 	public static void commandEqual(String toBeCheck, String template) throws ErrorException{
 		if	(toBeCheck.equals(template)) {}
@@ -21,7 +21,6 @@ public class Help {
      * conver the toBeCheck into string first then check with  template 
      * 
      * @param byte[] and strings to be check
-     * @return if matches, return TRUE; otherwise return FALSE
      */
 	public static void commandEqual(byte[] toBeCheck, String template) throws ErrorException{
 		String toBeCheck_string = new String(toBeCheck);
@@ -60,7 +59,7 @@ public class Help {
 		}
 		
 		if (found == false) {
-			throw new ErrorException(":fail " + serverCipher + "is NOT FOUND in client's ciphersuite!\n");
+			throw new ErrorException(":fail " + serverCipher + "IS NOT FOUND IN CLIENT'S CIPHERSUITE!\n");
 		}
 	}
 	
@@ -76,47 +75,53 @@ public class Help {
 	}
 	
 	/**
-     * add byte[] of :ka1 to the base64 encode public key 
+     * attach command to the base64 encode public key 
      * 
+     * @param command need to be attached
      * @param the base64 encoded string of public key
-     * @return the combination of :ka1 and base64 encoded string of public key 
+     * @return the combination of command and base64 encoded string of public key 
      */
-	public static byte[] addKa1(byte[] encodedPublic) {
-		byte[] ka1 = ":ka1 ".getBytes();
-		byte[] combined = new byte[ka1Length + encodedPublic.length];
+	public static byte[] addCommand(String command, byte[] encoded) {
+		byte[] command_byte = command.getBytes();
+		int command_length = command.length();
+		byte[] combined = new byte[command_length + encoded.length];
 
 		for (int i = 0; i < combined.length; i++) {
-		    combined[i] = i < ka1Length ? ka1[i] : encodedPublic[i - ka1Length];
+		    combined[i] = i < command_length ? command_byte[i] : encoded[i - command_length];
 		}
 		return combined;
 	}
 	
 	/**
-     * get the byte[] of :ka1 
+     * get the byte[] of command
      * 
-     * @param the combination of :ka1 and base64 encoded string of public key 
-     * @return the byte[] of :ka1  
+     * @param command need to be returned
+     * @param the combination of command and base64 encoded string of public key 
+     * @return the byte[] of command 
      */
-	public static byte[] getKa1(byte[] combined) {
-		byte[] ka1new = new byte[ka1Length];
+	public static byte[] getCommand(String command, byte[] combined) {
+		int command_length = command.length();
+		byte[] command_byte = new byte[command_length];
 		
-		for (int i = 0; i < ka1Length; i++) {
-			ka1new[i] = combined[i];
+		for (int i = 0; i < command_length; i++) {
+			command_byte[i] = combined[i];
 		}
-		return ka1new;
+		return command_byte;
 	}
 	
 	/**
-     * get byte[] of base64 encoded string of public key
+     * get byte[] of base64 encoded string that's preceded by command
      * 
-     * @param the combination of :ka1 and base64 encoded string of public key 
-     * @return byte[] of base64 encoded string of public key 
+     * @param combined is the byte[] of combination of command and base64 encoded string
+     * @param command is the command need to be split out
+     * @return byte[] of base64 encoded string that attached to the command
      */
-	public static byte[] splitEncodedPublic(byte[] combined) {
-		byte[] split = new byte[combined.length-ka1Length];
+	public static byte[] splitCommand(String command, byte[] combined ) {
+		int command_length = command.length();
+		byte[] split = new byte[combined.length-command_length];
 		
 		for (int i = 0; i < split.length; i++) {
-			split[i] = combined[i+ka1Length];
+			split[i] = combined[i+command_length];
 		}
 		return split;
 	}
@@ -124,20 +129,97 @@ public class Help {
 	/**
      * display greeting message
      */
-	public static void greeting() {
-		System.out.println("************** Welcome to the Chat Hub! **************");
-		System.out.println("*  - Type receiver's alias: message you want to send *");
-		System.out.println("*  - Example: Type the following to talk to Alice    *");
-		System.out.println("*  - Example: Alice: Hi How are you? (press enter)   *");
-		System.out.println("*  - When finish, enter \"exit\" to exit the chat      *");
-		System.out.println("******************************************************");
+	public static void greeting(String alias) {
+		System.out.println("*******************************************************************************");
+		System.out.println("\t\tHi " + alias + "! Welcome to the Chat Hub! ");
+		System.out.println("\t- Type \"To receiver's alias: message\" to start chatting ");
+		System.out.println("\t- Example: To alice: Hi How are you? (press enter to talk to alice)   ");
+		System.out.println("\t- When finish chatting, enter \"exit\" to exit the chat hub    ");
+		System.out.println("*******************************************************************************");
 	}
 	
 	/**
      * display ending message
      */
-	public static void ending() {
-		System.out.println("\n************ Thanks for chatting! ************\n");
+	public static void ending(String alias) {
+		System.out.println("\n************ Bye " + alias + "! Thanks for chatting! ************\n");
 	}
+	
+	
+	/**
+     * linked keystore with corresponding keystoreFileName and password
+     * @param the name of keystore file and password for the keystore
+     */
+	public static KeyStore linkKeyStore(String keystoreFileName, String password) throws Exception{
+	    char[] pw = password.toCharArray();
+
+	    FileInputStream fIn = new FileInputStream(keystoreFileName);
+	    KeyStore keystore = KeyStore.getInstance("JKS");
+
+	    keystore.load(fIn, pw);
+	    return keystore;
+	}
+	
+	/**
+     * get the based64 encoded byte[] certificate
+     * @param the keystore and alias for the certificate
+     */
+	public static byte[] getCert(KeyStore ks, String alias) throws Exception {
+		byte[] cert = null;
+		try {
+			cert = ks.getCertificate(alias).getEncoded();
+		} catch (Exception fail) {
+			throw new ErrorException(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
+		}
+		return cert;
+	}
+	
+	/**
+     * verify certificate with public key
+     * 
+     * @param two certificates to be verified
+     * @return if matches, return TRUE; otherwise return FALSE
+     */
+	public static void certVerify(KeyStore ks, String alias, byte[] received, String integrity) throws ErrorException {
+		try {
+			// recover received certificate from byte[]
+			CertificateFactory certFactory = CertificateFactory.getInstance(integrity);
+			ByteArrayInputStream in = new ByteArrayInputStream(received);			
+			X509Certificate receivedCert = (X509Certificate)certFactory.generateCertificate(in);
+			
+			// verify received certificate with keystore certificate
+			ks.getCertificate(alias).verify(receivedCert.getPublicKey());
+
+		} catch (KeyStoreException fail) {
+			throw new ErrorException(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
+		} catch (Exception fail)	{
+			throw new ErrorException(":fail CERTIFICATES VERIFICATION FOR ALIAS " + alias + " FAILED!\n");
+		}
+	}
+	
+	
+	/**
+     * find the alias name for certByte in ks
+     * 
+     * @param ks is keystore that stores all certificate
+     * @param certByte is the based64 encoded byte[] of certificate
+     * @return alias of the certByte
+     */
+	public static String getAlias(KeyStore ks, byte[] certByte, String integrity) throws ErrorException {
+		String alias = null;
+		try {	
+			// recover received certificate from byte[]
+			CertificateFactory certFactory = CertificateFactory.getInstance(integrity);
+			ByteArrayInputStream in = new ByteArrayInputStream(certByte);			
+			X509Certificate receivedCert = (X509Certificate)certFactory.generateCertificate(in);
+			
+			// get alias from the certificate within keystore
+			alias = ks.getCertificateAlias(receivedCert);
+		} catch (Exception fail) {
+			throw new ErrorException(":fail CERTIFICATES IS NOT FOUND IN CHATHUB'S KEYSTORE!\n");
+		}
+		return alias;
+	}
+	
 	
 }

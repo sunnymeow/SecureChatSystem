@@ -47,15 +47,6 @@ public class ClientSender extends Thread{
     }
 
     /**
-     * Sends given message to the client's socket.
-     * @throws IOException 
-     */
-    private void sendMessageToClient(String aMessage) throws IOException {
-        mOut.println(aMessage);
-        mOut.flush();
-    }
-
-    /**
      * Until interrupted, reads messages from the message queue
      * and sends them to the client's socket.
      */
@@ -64,22 +55,28 @@ public class ClientSender extends Thread{
     		String ciphertext = null;
         try {
            while (!isInterrupted()) {
+        	   	   // encryption
                message = getNextMessageFromQueue();
                ciphertext = mClientInfo.mEncrption.encrypt(message);
-               
-               // display received message
                System.out.println(message);
-               // display the encrypted message after encryption
-               System.out.println("(Encrypted into cipher text: " + ciphertext + ")");
+               System.out.println("\t(Encrypted into cipher text: " + ciphertext + ")");
                
-               sendMessageToClient(ciphertext);
+               // send encrypted message to client socket
+               mOut.println(ciphertext);
+               mOut.flush();
            }
         } catch (Exception e) {
-           // Communication problem
-        }
+        		System.err.print(e);
+			System.exit(-1);
+		}   
         // Communication is broken. Interrupt both listener and sender threads
         mClientInfo.mClientListener.interrupt();
-        mServerDispatcher.deleteClient(mClientInfo);
+        try {
+			mServerDispatcher.deleteClient(mClientInfo);
+		} catch (IOException e) {
+			System.err.print(e);
+			System.exit(-1);
+		}
     }
 }
 

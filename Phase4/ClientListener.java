@@ -30,36 +30,37 @@ public class ClientListener extends Thread {
 		   while (!isInterrupted()) {
 		   		ciphertext = mIn.readLine();
 		   		try {
+		   			// decryption
 		   			message = mClientInfo.mEncrption.decrypt(ciphertext);
 				} catch (Exception e) {
 					System.err.print(e);
 					System.exit(-1);
 				}
 				finally {
-					// display received message
+					// display for server
 					System.out.println(message);    				
-					// display the encrypted message from client before decryption
-					System.out.println("(Decrypted from cipher text: " + ciphertext + ")");			
+					System.out.println("\t(Decrypted from cipher text: " + ciphertext + ")");			
 				}
 		   		
-	          if (message == null || message.equals("exit"))
-	               break;
-	          mServerDispatcher.dispatchMessage(mClientInfo, message);
-           }
+		          if (message == null || message.equals("exit"))
+		               break;
+		          
+		          // forward message to dispatch's queue
+		          mServerDispatcher.dispatchMessage(mClientInfo, message);
+		       }
         } catch (IOException ioex) {
-           // Problem reading from socket (communication is broken)
+            // Problem reading from socket (communication is broken)
+    			System.err.print(ioex);
+    			System.exit(-1);
         }
 
         // Communication is broken. Interrupt both listener and sender threads        
-        String senderIP = mClientInfo.mSocket.getInetAddress().getHostAddress();
-        String senderPort = "" + mClientInfo.mSocket.getPort();
-        System.out.println("Bye! " + senderIP + " " + senderPort);
-
+        System.out.println("***Bye " + mClientInfo.mAlias + " !");
         mClientInfo.mClientSender.interrupt();
-        mServerDispatcher.deleteClient(mClientInfo);
         try {
-        		mClientInfo.mSocket.close();
+			mServerDispatcher.deleteClient(mClientInfo);
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }

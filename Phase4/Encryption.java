@@ -8,6 +8,7 @@ public class Encryption {
 	private SecretKey secretKey;
 	private String algorithm;
 	private static byte[] iv = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	private static final int TAG = 128;
 	
 	/**
      * Initialize the secretKey with keyBytes
@@ -21,7 +22,49 @@ public class Encryption {
 	}
 	
 	/**
-     * Encrypt a string with AES algorithm.
+     * Encrypt a string with AES_128/GCM/NoPadding algorithm.
+     *
+     * @param message is the plain text
+     * @return the encrypted cipher text
+     */
+	public String GCMencrypt(String plainText) throws Exception {		
+		// initialize cipher with secret key
+		Cipher cipher = Cipher.getInstance(algorithm);
+		GCMParameterSpec gcmspec = new GCMParameterSpec(TAG,iv);
+		cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmspec);
+		
+		// encrypt plain text
+		byte[] cipherText = cipher.doFinal(plainText.getBytes());
+		return Base64.getEncoder().encodeToString(cipherText);
+	}
+	
+	/**
+     * Decrypt a string with AES_128/GCM/NoPadding algorithm.
+     *
+     * @param message is the cipher text
+     * @return the decrypted plain text
+     */
+	public String GCMdecrypt(String cipherText) throws Exception, ErrorException {
+		byte[] plainText;
+		try {
+			// initialize cipher with secret key
+			Cipher cipher = Cipher.getInstance(algorithm);
+			GCMParameterSpec gcmspec = new GCMParameterSpec(TAG,iv);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmspec);
+		
+			// decrypt cipher text
+			byte[] decoder  = Base64.getDecoder().decode(cipherText);
+			plainText = cipher.doFinal(decoder);
+		} catch (Exception err) {
+			throw new ErrorException(":err DECRYPTION FAILED!\n");
+		} 
+		
+		String str = new String(plainText, "UTF-8");
+		return str;
+	}
+	
+	/**
+     * Encrypt a string with AES/CBC/PKCS5Padding algorithm.
      *
      * @param message is the plain text
      * @return the encrypted cipher text
@@ -38,12 +81,10 @@ public class Encryption {
 	}
 	
 	/**
-     * Decrypt a string with AES algorithm.
+     * Decrypt a string with AES/CBC/PKCS5Padding algorithm.
      *
      * @param message is the cipher text
      * @return the decrypted plain text
-	 * @throws NoSuchPaddingException 
-	 * @throws NoSuchAlgorithmException 
      */
 	public String decrypt(String cipherText) throws Exception, ErrorException {
 		byte[] plainText;

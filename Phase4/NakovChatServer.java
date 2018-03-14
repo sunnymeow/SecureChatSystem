@@ -28,8 +28,14 @@ public class NakovChatServer {
 
         // Start ServerDispatcher thread
         ServerDispatcher serverDispatcher = new ServerDispatcher();
+        
         // Before thread starts, generate key pair for server
         serverDispatcher.makeMyKey();
+        
+        // Link keystore to chathub
+        String ksFileName = args[0];
+        String password = args[1];
+        serverDispatcher.getMyKeyStore(ksFileName, password);
         serverDispatcher.start();
 
         // Accept and handle client connections
@@ -48,18 +54,16 @@ public class NakovChatServer {
                try {
             	   		// check command and key exchange
             	   		serverDispatcher.checkCommand(clientInfo);
-               } catch (Exception e) {
-            	   		System.out.println("Fail to check command!");
-		        	   	System.err.print(e);
-					System.exit(-1);
-			}
+               } catch (ErrorException fail) {
+	   				System.err.print(fail);
+	   				System.exit(-1);
+               }
                clientListener.start();
                clientSender.start();
                serverDispatcher.addClient(clientInfo);
                
-//               serverDispatcher.display(); ////////////
            } catch (IOException ioe) {
-//               ioe.printStackTrace();
+               ioe.printStackTrace();
         	   		System.err.print(ioe);
 				System.exit(-1);
            }

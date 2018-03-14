@@ -9,6 +9,7 @@
  */
 import java.io.*;
 import java.net.*;
+import java.security.KeyStore;
 
 public class NakovChatClient {
     public static final String SERVER_HOSTNAME = "localhost";
@@ -16,52 +17,51 @@ public class NakovChatClient {
     private static Socket socket;
     private static BufferedReader mIn = null;
     private static PrintWriter mOut = null;
-    private static String myCipherSuite = "ecdh-secp224r1+nocert+AES/CBC/PKCS5Padding//ecdh-secp256r1+x509+aes128/gcm128";
+    private static String myCipherSuite = "ecdh-secp224r1+X.509+AES_128/GCM/NoPadding//ecdh-secp256r1+x.509+AES_128/GCM/NoPadding";
 	private static KeyExchange myKey;
 	private static Encryption cov;
 	private static String keyEstAlgor;	// key establish algorithm
 	private static String keyEstSpec;	// specific parameter for key establish algorithm
 	private static String integrity;		// a means for ensuring integrity of public key
 	private static String symCipher;		// symmetric cipher
+	private static KeyStore myKeyStore;
+	private static String myAlias;
 
     public static void main(String[] args) throws Exception{
     		
-        try {
-           // Connect to Nakov Chat Server
+        // Connect to Nakov Chat Server
+    		try {
            socket = new Socket(SERVER_HOSTNAME, SERVER_PORT);
+           mIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		   mOut = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
            System.out.println("Connected to server " + SERVER_HOSTNAME + ":" + SERVER_PORT);
            
         } catch (IOException ioe) {
-           System.err.println("Can not establish connection to " + SERVER_HOSTNAME + ":" + SERVER_PORT);
+           System.err.println(":fail CAN'T ESTABLISH SOCKET CONNECTION TO " + SERVER_HOSTNAME + ":" + SERVER_PORT);
            ioe.printStackTrace();
            System.exit(-1);
         }
 
-       // check command and key exchange
-       checkCommand();
-       
-       try {
-           // Connect to Nakov Chat Server
-           mIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-           mOut = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));           
-                      
-        } catch (IOException ioe) {
-           System.err.println("Can not establish connection to " + SERVER_HOSTNAME + ":" + SERVER_PORT);
-           ioe.printStackTrace();
-           System.exit(-1);
-        }
+    		// link client to key store
+    		String ksFileName = args[0];
+    		String password = args[1];
+    		getMyKeyStore(ksFileName, password);
         
+        // check command and key exchange
+        checkCommand();
+
         // Create and start Sender thread
-        Sender sender = new Sender(mOut, cov);
+        Sender sender = new Sender(mOut, cov, myAlias);
         sender.setDaemon(true);
         sender.start();
         
+        // Read messages from the server (socket) and print them
         try {
-           // Read messages from the server (socket) and print them
            String message = null;
            String ciphertext = null;
            while ((ciphertext=mIn.readLine()) != null) {        	   		
 	        	   try {
+	        		   // decrypt input ciphertext
 	        		   message = cov.decrypt(ciphertext);
 				} catch (ErrorException err) {
 					System.err.print(err);
@@ -70,12 +70,11 @@ public class NakovChatClient {
 				finally {
 					// display received message
 					System.out.println(message);
-					// display the encrypted message from server before decryption
-					System.out.println("(Decrypted from cipher text: " + ciphertext + ")");
+					System.out.println("\t(Decrypted from cipher text: " + ciphertext + ")");
 				}     
            }
         } catch (IOException ioe) {
-           System.err.println("Connection to server broken.");
+           System.err.println(":fail CONNECTION TO SERVER IS BROKENT!");
            ioe.printStackTrace();
         }
     }
@@ -86,14 +85,14 @@ public class NakovChatClient {
 		String senderIP = socket.getInetAddress().getHostAddress();
         String senderPort = "" + socket.getPort();
         
+     // Connect to Nakov Chat Server
 	    	try {
-	        // Connect to Nakov Chat Server
 	    		in = new DataInputStream(socket.getInputStream());
 	    		out = new DataOutputStream(socket.getOutputStream());
 	    		System.out.println("******************* Start command check for " + senderIP + ":" + senderPort + " *******************");
 	                       
 	    } catch (IOException ioe) {
-	    		System.err.println("Can not establish connection to " + SERVER_HOSTNAME + ":" + SERVER_PORT);
+	    		System.err.println(":fail CAN'T ESTABLISH STREAM CONNECTION TO " + SERVER_HOSTNAME + ":" + SERVER_PORT);
             ioe.printStackTrace();
             System.exit(-1);
          }
@@ -112,7 +111,7 @@ public class NakovChatClient {
 				receivedCipherSuite = in.readUTF();
 				System.out.println("PHASE 2.1 " + receivedCipherSuite);
 			} catch (Exception err) {
-				System.err.println("NO RESPONSE FROM SERVER!");
+				System.err.println(":fail NO RESPONSE FROM SERVER!");
 				System.exit(-1);
 			}
 			
@@ -133,6 +132,29 @@ public class NakovChatClient {
 		// ******************* PHASE 3: waiting for key agreement ******************* //
 		int receiveSize = 0;
 		while (receiveSize == 0) {
+			// ***** PHASE 3.1: receive :cert server's encoded certificate ***** //
+			byte[] certEncodedCert = null;
+			try {
+				receiveSize = in.readInt();
+				certEncodedCert = new byte[receiveSize];
+				in.readFully(certEncodedCert);
+				System.out.println("PHASE 3.1 :cert " + certEncodedCert.toString());				
+			} catch (Exception err) {
+				System.err.println(":fail NO RESPONSE FROM SERVER!");
+				System.exit(-1);
+			}
+			
+			// ***** PHASE 3.1: verify :cert server's encoded certificate ***** //
+			try {
+				byte[] encodedCert = Help.splitCommand(":cert ", certEncodedCert);
+				String serverAlias = Help.getAlias(myKeyStore, encodedCert, integrity);
+				Help.certVerify(myKeyStore, serverAlias, encodedCert, integrity);
+				System.out.println("PHASE 3.1 :cert " + encodedCert.toString() + " is verified (from " + serverAlias +")");
+			} catch (ErrorException fail) {
+				System.err.print(fail);
+				System.exit(-1);
+			}
+			
 			// ***** PHASE 3.1: receive :ka1 server's encoded public key ***** //
 			byte[] ka1serverPublic = null;
 			try {
@@ -141,30 +163,43 @@ public class NakovChatClient {
 				in.readFully(ka1serverPublic);
 				System.out.println("PHASE 3.1 :ka1 " + ka1serverPublic.toString());				
 			} catch (Exception err) {
-				System.err.println("NO RESPONSE FROM SERVER!");
+				System.err.println(":fail NO RESPONSE FROM SERVER!");
 				System.exit(-1);
 			}
 			
 			// check whether received command equals to :ka1
 			try {	
-				byte[] ka1 = Help.getKa1(ka1serverPublic);
-				Help.commandEqual(ka1, ":ka1 ");
+				byte[] ka1 = Help.getCommand(":ka1 ", ka1serverPublic);
+				Help.commandEqual(ka1, ":ka1 ");                                               
 			} catch (ErrorException fail) {
 				System.err.print(fail);
 				System.exit(-1);
 			}
 			
 			finally {
+				// ***** PHASE 2.2: send :cert based64 encoded certificate *****//
+				try {
+					byte[] EncodedMyCert = Help.getCert(myKeyStore, myAlias);
+					byte[] certEncodedMyCert = Help.addCommand(":cert ", EncodedMyCert);
+					System.out.println("PHASE 2.2 :cert " + EncodedMyCert.toString());
+					out.writeInt(certEncodedMyCert.length);
+					out.write(certEncodedMyCert);
+					out.flush();	
+				} catch (ErrorException fail) {
+					System.err.print(fail);
+					System.exit(-1);
+				}
+				
 				// ***** PHASE 2.2: send :ka1 based64 encoded public key ***** //
 				byte[] encodedPublic = myKey.getEncodedPublic();
-				byte[] ka1encodedPublic = Help.addKa1(encodedPublic);
+				byte[] ka1encodedPublic = Help.addCommand(":ka1 ", encodedPublic);
 				System.out.println("PHASE 2.2 :ka1 "+ encodedPublic.toString());		
 				out.writeInt(ka1encodedPublic.length);
 				out.write(ka1encodedPublic);
 				out.flush();
 
 				// ***** PHASE 3.2: generate shared secret ***** //
-				myKey.doECDH(Help.splitEncodedPublic(ka1serverPublic));
+				myKey.doECDH(Help.splitCommand(":ka1 ", ka1serverPublic));
 				System.out.println("PHASE 3.2 share key: " + myKey.getSecret());
 			}
 		}		
@@ -195,4 +230,23 @@ public class NakovChatClient {
 		// initialize KeyExchange object
 		myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
 	}
+	
+	/**
+     * initialize KeyExchange object myKey with given cipher suite and ClientInfo
+     * 
+     * @param the cipher suite sent by client, and ClientInformation
+     */
+    public static void getMyKeyStore(String keystoreFileName, String password) throws ErrorException {
+    		try {
+    			// initialize myAlias from the key store name (alias.jks)
+    			String[] temp = keystoreFileName.split("\\.");
+    			myAlias = temp[0];
+    			
+    			// initialize myKeyStore from the key store name
+    			keystoreFileName = System.getProperty("user.dir") + "/" + keystoreFileName;
+    			myKeyStore = Help.linkKeyStore(keystoreFileName, password);
+    		} catch (Exception e) {
+    			throw new ErrorException(":fail KEYSTORE " + keystoreFileName + " LINK FAILED!\n");
+    		}
+    }
 }

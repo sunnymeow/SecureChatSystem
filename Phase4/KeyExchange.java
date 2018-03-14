@@ -58,8 +58,7 @@ public class KeyExchange {
 		key_secret = new byte[16];
 	    for(int i = 0; i < 16; i++) {
 	        key_secret[i]=oriSecret[oriSecret.length-16+i];
-	    }
-		
+	    }	
 	}
 	
 	/**

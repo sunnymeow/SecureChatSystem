@@ -9,11 +9,13 @@ import java.io.*;
 
 public class Sender extends Thread {
 	private PrintWriter mOut;
-	private Encryption cov;
+	private Encryption mCov;
+	private String mAlias;
 
-	public Sender(PrintWriter aOut, Encryption aCov){
+	public Sender(PrintWriter aOut, Encryption aCov, String alias){
         mOut = aOut;
-        cov = aCov;
+        mCov = aCov;
+        mAlias = alias;
 	}
 
     /**
@@ -24,26 +26,27 @@ public class Sender extends Thread {
 		String message = null;
 		String ciphertext = null;
 		try {
-			Help.greeting();
+			Help.greeting(mAlias);
 			BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 			while (!isInterrupted()) {
+				// read input from keyboard
 				message = in.readLine();
-				try {
-					ciphertext = cov.encrypt(message);
-					System.out.println("(Encrypted into cipher text: " + ciphertext + ")");
-				} catch (Exception err) {
-					System.err.print(err);
-					System.exit(-1);
-				}
+				
+				// encrypt the input plaintext into ciphertext
+				ciphertext = mCov.encrypt(message);
+				System.out.println("\t(Encrypted into cipher text: " + ciphertext + ")");
+				
+				// send the ciphertext to chat server through the socket
 				mOut.println(ciphertext);
 				mOut.flush();
 				if (message.equals("exit")) {
-					Help.ending();
+					Help.ending(mAlias);
         	   			break;
 				}
 			}
-		} catch (IOException ioe) {
-	            // Communication is broken
+		} catch (Exception err) {
+			System.err.print(err);
+			System.exit(-1);
 		}
 	}
 }
