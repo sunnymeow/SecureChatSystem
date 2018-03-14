@@ -45,8 +45,11 @@ public class Encryption {
 			// encrypt plain text
 			byte[] cipherText = cipher.doFinal(plainText.getBytes());
 			return Base64.getEncoder().encodeToString(cipherText);
+		} catch (AEADBadTagException e) {
+			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
+			return null;
 		} catch (Exception e) {
-			System.err.println(":err ENCRYPTION FAILED!\n");
+			System.err.println(":err ENCRYPTION USING " + algorithm + " FAILED!\n");
 			return null;
 		}
 	}
@@ -67,8 +70,11 @@ public class Encryption {
 			byte[] decoder  = Base64.getDecoder().decode(cipherText);
 			byte[] plainText = cipher.doFinal(decoder);
 			return new String(plainText, "UTF-8");			
+		} catch (AEADBadTagException e) {
+			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
+			return null;
 		} catch (Exception err) {
-			System.err.println(":err DECRYPTION FAILED!\n");
+			System.err.println(":err DECRYPTION USING " + algorithm + " FAILED!\n");
 			return null;
 		} 
 	}
@@ -88,8 +94,11 @@ public class Encryption {
 			// encrypt plain text
 			byte[] cipherText = cipher.doFinal(plainText.getBytes());
 			return Base64.getEncoder().encodeToString(cipherText);
+		} catch (AEADBadTagException e) {
+			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
+			return null;
 		} catch (Exception e) {
-			System.err.println(":err ENCRYPTION FAILED!\n");
+			System.err.println(":err ENCRYPTION USING " + algorithm + " FAILED!\n");
 			return null;
 		}
 	}
@@ -111,8 +120,11 @@ public class Encryption {
 			byte[] decoder  = Base64.getDecoder().decode(cipherText);
 			byte[] plainText = cipher.doFinal(decoder);
 			return new String(plainText, "UTF-8");			
+		} catch (AEADBadTagException e) {
+			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
+			return null;
 		} catch (Exception err) {
-			System.err.println(":err DECRYPTION FAILED!\n");
+			System.err.println(":err DECRYPTION USING " + algorithm + " FAILED!\n");
 			return null;
 		} 
 	}
