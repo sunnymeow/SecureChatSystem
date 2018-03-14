@@ -2,11 +2,19 @@ default:
 	javac *.java
 
 server:
-	java NakovChatServer
+	java NakovChatServer chathub.jks password
 
-client:
-	java NakovChatClient
+alice:
+	java NakovChatClient alice.jks password
 
+bob:
+	java NakovChatClient bob.jks password
+
+charles:
+	java NakovChatClient charles.jks password
+
+david:
+	java NakovChatClient david.jks password
 
 clean:
 	rm *.class

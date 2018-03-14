@@ -27,15 +27,22 @@ public class Encryption {
      * @param message is the plain text
      * @return the encrypted cipher text
      */
-	public String GCMencrypt(String plainText) throws Exception {		
-		// initialize cipher with secret key
-		Cipher cipher = Cipher.getInstance(algorithm);
-		GCMParameterSpec gcmspec = new GCMParameterSpec(TAG,iv);
-		cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmspec);
+	public String GCMencrypt(String plainText) {		
+		String finalText = null;
 		
-		// encrypt plain text
-		byte[] cipherText = cipher.doFinal(plainText.getBytes());
-		return Base64.getEncoder().encodeToString(cipherText);
+		try {
+			// initialize cipher with secret key
+			Cipher cipher = Cipher.getInstance(algorithm);
+			GCMParameterSpec gcmspec = new GCMParameterSpec(TAG,iv);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmspec);
+			
+			// encrypt plain text
+			byte[] cipherText = cipher.doFinal(plainText.getBytes());
+			finalText = Base64.getEncoder().encodeToString(cipherText);
+		} catch (Exception e) {
+			System.err.println(":err ENCRYPTION FAILED!\n");
+		}
+		return finalText;
 	}
 	
 	/**
@@ -44,8 +51,10 @@ public class Encryption {
      * @param message is the cipher text
      * @return the decrypted plain text
      */
-	public String GCMdecrypt(String cipherText) throws Exception, ErrorException {
+	public String GCMdecrypt(String cipherText) {
 		byte[] plainText;
+		String str = null;
+		
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
@@ -55,11 +64,10 @@ public class Encryption {
 			// decrypt cipher text
 			byte[] decoder  = Base64.getDecoder().decode(cipherText);
 			plainText = cipher.doFinal(decoder);
+			str = new String(plainText, "UTF-8");
 		} catch (Exception err) {
-			throw new ErrorException(":err DECRYPTION FAILED!\n");
+			System.err.println(":err DECRYPTION FAILED!\n");
 		} 
-		
-		String str = new String(plainText, "UTF-8");
 		return str;
 	}
 	
@@ -69,16 +77,24 @@ public class Encryption {
      * @param message is the plain text
      * @return the encrypted cipher text
      */
-	public String encrypt(String plainText) throws Exception {		
-		// initialize cipher with secret key
-		Cipher cipher = Cipher.getInstance(algorithm);
-		IvParameterSpec ivspec = new IvParameterSpec(iv);
-		cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
+	public String encrypt(String plainText) {
+		String finalText = null;
 		
-		// encrypt plain text
-		byte[] cipherText = cipher.doFinal(plainText.getBytes());
-		return Base64.getEncoder().encodeToString(cipherText);
+		try {
+			// initialize cipher with secret key
+			Cipher cipher = Cipher.getInstance(algorithm);
+			IvParameterSpec ivspec = new IvParameterSpec(iv);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
+			
+			// encrypt plain text
+			byte[] cipherText = cipher.doFinal(plainText.getBytes());
+			finalText = Base64.getEncoder().encodeToString(cipherText);
+		} catch (Exception e) {
+			System.err.println(":err ENCRYPTION FAILED!\n");
+		}
+		return finalText;
 	}
+		
 	
 	/**
      * Decrypt a string with AES/CBC/PKCS5Padding algorithm.
@@ -86,8 +102,10 @@ public class Encryption {
      * @param message is the cipher text
      * @return the decrypted plain text
      */
-	public String decrypt(String cipherText) throws Exception, ErrorException {
+	public String decrypt(String cipherText) {
 		byte[] plainText;
+		String str = null;
+		
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
@@ -97,11 +115,12 @@ public class Encryption {
 			// decrypt cipher text
 			byte[] decoder  = Base64.getDecoder().decode(cipherText);
 			plainText = cipher.doFinal(decoder);
+			str = new String(plainText, "UTF-8");
+			
 		} catch (Exception err) {
-			throw new ErrorException(":err DECRYPTION FAILED!\n");
+			System.err.println(":err DECRYPTION FAILED!\n");
 		} 
-		
-		String str = new String(plainText, "UTF-8");
+
 		return str;
 	}
 }

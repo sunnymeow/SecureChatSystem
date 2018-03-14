@@ -41,12 +41,13 @@ public class Sender extends Thread {
 				mOut.flush();
 				if (message.equals("exit")) {
 					Help.ending(mAlias);
+					mOut.close();
         	   			break;
 				}
 			}
-		} catch (Exception err) {
-			System.err.print(err);
-			System.exit(-1);
+			
+		} catch (IOException err) {
+			System.err.println(err);
 		}
 	}
 }

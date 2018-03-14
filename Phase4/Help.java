@@ -10,10 +10,8 @@ public class Help {
      * @param two strings to be check
      */
 	public static void commandEqual(String toBeCheck, String template) throws ErrorException{
-		if	(toBeCheck.equals(template)) {}
-		else {
+		if	(!toBeCheck.equals(template)) 
 			throw new ErrorException(":fail COMMAND " + template + " NOT FOUND!\n");
-		}
 	}
 	
 	/**
@@ -24,10 +22,8 @@ public class Help {
      */
 	public static void commandEqual(byte[] toBeCheck, String template) throws ErrorException{
 		String toBeCheck_string = new String(toBeCheck);
-		if	(toBeCheck_string.equals(template)) {}
-		else {
+		if	(!toBeCheck_string.equals(template)) 
 			throw new ErrorException(":fail COMMAND " + template + " NOT FOUND!\n");
-		}
 	}
 	
 	/**
@@ -132,9 +128,11 @@ public class Help {
 	public static void greeting(String alias) {
 		System.out.println("*******************************************************************************");
 		System.out.println("\t\tHi " + alias + "! Welcome to the Chat Hub! ");
-		System.out.println("\t- Type \"To receiver's alias: message\" to start chatting ");
-		System.out.println("\t- Example: To alice: Hi How are you? (press enter to talk to alice)   ");
-		System.out.println("\t- When finish chatting, enter \"exit\" to exit the chat hub    ");
+		System.out.println("\t1. Type \"To alias: message\" to send message (LETTERCASE OF ALIAS MATTERS!)");
+		System.out.println("\t   - Exp: To bob: Hi How are you? (message will be sent to alice)  ");
+		System.out.println("\t2. Type \"To all: message\" to talk to all (LETTERCASE OF ALL DOES NOT MATTER)");
+		System.out.println("\t   - Exp: To all: Hi How are you? (message will be sent to everyone in the chat hub) ");
+		System.out.println("\t3. When finish chatting, enter \"exit\" to exit the chat hub    ");
 		System.out.println("*******************************************************************************");
 	}
 	
@@ -150,13 +148,17 @@ public class Help {
      * linked keystore with corresponding keystoreFileName and password
      * @param the name of keystore file and password for the keystore
      */
-	public static KeyStore linkKeyStore(String keystoreFileName, String password) throws Exception{
+	public static KeyStore linkKeyStore(String keystoreFileName, String password) {
 	    char[] pw = password.toCharArray();
-
-	    FileInputStream fIn = new FileInputStream(keystoreFileName);
-	    KeyStore keystore = KeyStore.getInstance("JKS");
-
-	    keystore.load(fIn, pw);
+	    KeyStore keystore = null;
+	    
+	    try {
+		    FileInputStream fIn = new FileInputStream(keystoreFileName);
+		    keystore = KeyStore.getInstance("JKS");
+		    keystore.load(fIn, pw);
+	    } catch (Exception e) {
+	    		System.err.println(":fail KEYSTORE " + keystoreFileName + " FAILED TO LINK TO CHAT HUB SOCKET!\n");
+	    }
 	    return keystore;
 	}
 	
@@ -164,12 +166,12 @@ public class Help {
      * get the based64 encoded byte[] certificate
      * @param the keystore and alias for the certificate
      */
-	public static byte[] getCert(KeyStore ks, String alias) throws Exception {
+	public static byte[] getCert(KeyStore ks, String alias) {
 		byte[] cert = null;
 		try {
 			cert = ks.getCertificate(alias).getEncoded();
 		} catch (Exception fail) {
-			throw new ErrorException(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
+			System.err.println(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
 		}
 		return cert;
 	}
@@ -180,7 +182,7 @@ public class Help {
      * @param two certificates to be verified
      * @return if matches, return TRUE; otherwise return FALSE
      */
-	public static void certVerify(KeyStore ks, String alias, byte[] received, String integrity) throws ErrorException {
+	public static void certVerify(KeyStore ks, String alias, byte[] received, String integrity) {
 		try {
 			// recover received certificate from byte[]
 			CertificateFactory certFactory = CertificateFactory.getInstance(integrity);
@@ -191,9 +193,9 @@ public class Help {
 			ks.getCertificate(alias).verify(receivedCert.getPublicKey());
 
 		} catch (KeyStoreException fail) {
-			throw new ErrorException(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
+			System.err.println(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
 		} catch (Exception fail)	{
-			throw new ErrorException(":fail CERTIFICATES VERIFICATION FOR ALIAS " + alias + " FAILED!\n");
+			System.err.println(":fail CERTIFICATES VERIFICATION FOR ALIAS " + alias + " FAILED!\n");
 		}
 	}
 	
@@ -205,7 +207,7 @@ public class Help {
      * @param certByte is the based64 encoded byte[] of certificate
      * @return alias of the certByte
      */
-	public static String getAlias(KeyStore ks, byte[] certByte, String integrity) throws ErrorException {
+	public static String getAlias(KeyStore ks, byte[] certByte, String integrity) {
 		String alias = null;
 		try {	
 			// recover received certificate from byte[]
@@ -216,7 +218,7 @@ public class Help {
 			// get alias from the certificate within keystore
 			alias = ks.getCertificateAlias(receivedCert);
 		} catch (Exception fail) {
-			throw new ErrorException(":fail CERTIFICATES IS NOT FOUND IN CHATHUB'S KEYSTORE!\n");
+			System.err.println(":fail CERTIFICATES IS NOT FOUND IN CHATHUB'S KEYSTORE!\n");
 		}
 		return alias;
 	}

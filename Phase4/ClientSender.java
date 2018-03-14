@@ -65,18 +65,14 @@ public class ClientSender extends Thread{
                mOut.println(ciphertext);
                mOut.flush();
            }
-        } catch (Exception e) {
-        		System.err.print(e);
-			System.exit(-1);
+        } catch (InterruptedException e) {
+        		System.err.println(e);
 		}   
+        
         // Communication is broken. Interrupt both listener and sender threads
         mClientInfo.mClientListener.interrupt();
-        try {
-			mServerDispatcher.deleteClient(mClientInfo);
-		} catch (IOException e) {
-			System.err.print(e);
-			System.exit(-1);
-		}
+		mServerDispatcher.deleteClient(mClientInfo);
+
     }
 }
 

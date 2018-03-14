@@ -13,32 +13,33 @@ import java.io.*;
 public class NakovChatServer {
     public static final int LISTENING_PORT = 2004;
     
-    public static void main(String[] args) throws Exception{
-        // Open server socket for listening
+    public static void main(String[] args) {
+        // open server socket for listening
         ServerSocket serverSocket = null;
 
         try {
            serverSocket = new ServerSocket(LISTENING_PORT);
            System.out.println("NakovChatServer started on port " + LISTENING_PORT);
         } catch (IOException se) {
-           System.err.println("Can not start listening on port " + LISTENING_PORT);
-           se.printStackTrace();
+           System.err.println(":fail CAN'T START LISTENING ON PORT " + LISTENING_PORT + "\n");
            System.exit(-1);
         }
 
-        // Start ServerDispatcher thread
+        // initialize ServerDispatcher thread
         ServerDispatcher serverDispatcher = new ServerDispatcher();
         
-        // Before thread starts, generate key pair for server
+        // before thread starts, generate key pair for server
         serverDispatcher.makeMyKey();
         
-        // Link keystore to chathub
+        // link keystore to chathub
         String ksFileName = args[0];
         String password = args[1];
         serverDispatcher.getMyKeyStore(ksFileName, password);
+        
+        // start ServerDispatcher thread
         serverDispatcher.start();
 
-        // Accept and handle client connections
+        // accept and handle client connections
         while (true) {
            try {
                Socket socket = serverSocket.accept();
@@ -50,22 +51,17 @@ public class NakovChatServer {
 
                clientInfo.mClientListener = clientListener;
                clientInfo.mClientSender = clientSender;
+
+	    	   	   // check command and key exchange
+	    	   	   serverDispatcher.checkCommand(clientInfo);
                
-               try {
-            	   		// check command and key exchange
-            	   		serverDispatcher.checkCommand(clientInfo);
-               } catch (ErrorException fail) {
-	   				System.err.print(fail);
-	   				System.exit(-1);
-               }
+               // start clientListener and clientSender thread
                clientListener.start();
                clientSender.start();
                serverDispatcher.addClient(clientInfo);
                
            } catch (IOException ioe) {
-               ioe.printStackTrace();
-        	   		System.err.print(ioe);
-				System.exit(-1);
+        	   		System.err.println(ioe);
            }
         }        
     }
