@@ -12,13 +12,13 @@ import java.security.*;
 import java.util.*;
 
 public class ServerDispatcher extends Thread {
-//	private final static String myCipherSuite = "ecdh-secp224r1+X.509+AES_128/GCM/NoPadding";
-	private final static String myCipherSuite = "ecdh-secp224r1+X.509+AES/CBC/PKCS5Padding";
-	private final static String keyEstAlgor = "ecdh";		// key establish algorithm
-	private final static String keyEstSpec = "secp224r1";	// specific parameter for key establish algorithm
-	private final static String integrity = "X.509";		// a means for ensuring integrity of public key
-	private final static String symCipher="AES/CBC/PKCS5Padding";		// symmetric cipher
-//	private final static String symCipher="AES_128/GCM/NoPadding";	// symmetric cipher
+	private final static String myCipherSuite = "ecdh-secp224r1+X.509+AES_128/GCM/NoPadding";			// for AES/GCM
+	private final static String symCipher="AES_128/GCM/NoPadding";									// symmetric cipher for AES/GCM
+//	private final static String myCipherSuite = "ecdh-secp224r1+X.509+AES/CBC/PKCS5Padding";			// for AES/CBC
+//	private final static String symCipher="AES/CBC/PKCS5Padding";										// symmetric cipher for AES/CBC
+	private final static String keyEstAlgor = "ecdh";					// key establish algorithm
+	private final static String keyEstSpec = "secp224r1";				// specific parameter for key establish algorithm
+	private final static String integrity = "X.509";					// a means for ensuring integrity of public key
 	private KeyExchange myKey;
 	private KeyStore myKeyStore;
 	private String myAlias;

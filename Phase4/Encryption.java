@@ -5,122 +5,115 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 public class Encryption {
-	private SecretKey secretKey;
-	private String algorithm;
-	private static byte[] iv = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	private static final int TAG = 128;
+	private IvParameterSpec ivspec;			// used for AES/CBC
+	private byte[] iv = new byte[16];		// used for AES/CBC
+	
+	private GCMParameterSpec gcmspec;		// used for AES/GCM
+	private final int TAG = 128;				// used for AES/GCM
+	
+	private SecretKeySpec secretKeySpec;		// used for AES/CBC and AES/GCM
+	private String algorithm;				// used for AES/CBC and AES/GCM
+	private byte[] secretBytes;				// used for AES/CBC and AES/GCM
 	
 	/**
      * Initialize the secretKey with keyBytes
      *
      */
 	public Encryption(byte[] secretBytes, String algorithm) {
-		// secret key initialization with key bytes of 16 zeros
-	    secretKey = new SecretKeySpec(secretBytes, "AES");
+		// different key specs initialization with secretBytes 
 		this.algorithm = algorithm;
-		System.out.println("PHASE 4   shared secret key: " + secretKey);
+		this.secretBytes = secretBytes;
+	    secretKeySpec = new SecretKeySpec(secretBytes, "AES");	
+		ivspec = new IvParameterSpec(iv);				// used for AES/CBC
+		gcmspec = new GCMParameterSpec(TAG,secretBytes);	// used for AES/GCM
+		
+		System.out.println("PHASE 4   shared secret key: " + secretKeySpec);
 	}
 	
 	/**
-     * Encrypt a string with AES_128/GCM/NoPadding algorithm.
+     * Encrypt a string with AES/GCM mode
      *
      * @param message is the plain text
      * @return the encrypted cipher text
      */
-	public String GCMencrypt(String plainText) {		
-		String finalText = null;
-		
+	public String encrypt(String plainText) {		
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
-			GCMParameterSpec gcmspec = new GCMParameterSpec(TAG,iv);
-			cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmspec);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, gcmspec);
 			
 			// encrypt plain text
 			byte[] cipherText = cipher.doFinal(plainText.getBytes());
-			finalText = Base64.getEncoder().encodeToString(cipherText);
+			return Base64.getEncoder().encodeToString(cipherText);
 		} catch (Exception e) {
 			System.err.println(":err ENCRYPTION FAILED!\n");
+			return null;
 		}
-		return finalText;
 	}
 	
 	/**
-     * Decrypt a string with AES_128/GCM/NoPadding algorithm.
-     *
-     * @param message is the cipher text
-     * @return the decrypted plain text
-     */
-	public String GCMdecrypt(String cipherText) {
-		byte[] plainText;
-		String str = null;
-		
-		try {
-			// initialize cipher with secret key
-			Cipher cipher = Cipher.getInstance(algorithm);
-			GCMParameterSpec gcmspec = new GCMParameterSpec(TAG,iv);
-			cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmspec);
-		
-			// decrypt cipher text
-			byte[] decoder  = Base64.getDecoder().decode(cipherText);
-			plainText = cipher.doFinal(decoder);
-			str = new String(plainText, "UTF-8");
-		} catch (Exception err) {
-			System.err.println(":err DECRYPTION FAILED!\n");
-		} 
-		return str;
-	}
-	
-	/**
-     * Encrypt a string with AES/CBC/PKCS5Padding algorithm.
-     *
-     * @param message is the plain text
-     * @return the encrypted cipher text
-     */
-	public String encrypt(String plainText) {
-		String finalText = null;
-		
-		try {
-			// initialize cipher with secret key
-			Cipher cipher = Cipher.getInstance(algorithm);
-			IvParameterSpec ivspec = new IvParameterSpec(iv);
-			cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
-			
-			// encrypt plain text
-			byte[] cipherText = cipher.doFinal(plainText.getBytes());
-			finalText = Base64.getEncoder().encodeToString(cipherText);
-		} catch (Exception e) {
-			System.err.println(":err ENCRYPTION FAILED!\n");
-		}
-		return finalText;
-	}
-		
-	
-	/**
-     * Decrypt a string with AES/CBC/PKCS5Padding algorithm.
+     * Decrypt a string with AES/GCM mode
      *
      * @param message is the cipher text
      * @return the decrypted plain text
      */
 	public String decrypt(String cipherText) {
-		byte[] plainText;
-		String str = null;
-		
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
-			IvParameterSpec ivspec = new IvParameterSpec(iv);
-			cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
+			cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, gcmspec);
 		
 			// decrypt cipher text
 			byte[] decoder  = Base64.getDecoder().decode(cipherText);
-			plainText = cipher.doFinal(decoder);
-			str = new String(plainText, "UTF-8");
-			
+			byte[] plainText = cipher.doFinal(decoder);
+			return new String(plainText, "UTF-8");			
 		} catch (Exception err) {
 			System.err.println(":err DECRYPTION FAILED!\n");
+			return null;
 		} 
-
-		return str;
+	}
+	
+	/**
+     * Encrypt a string with AES/CBC mode
+     *
+     * @param message is the plain text
+     * @return the encrypted cipher text
+     */
+	public String CBCencrypt(String plainText) {
+		try {
+			// initialize cipher with secret key
+			Cipher cipher = Cipher.getInstance(algorithm);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivspec);
+			
+			// encrypt plain text
+			byte[] cipherText = cipher.doFinal(plainText.getBytes());
+			return Base64.getEncoder().encodeToString(cipherText);
+		} catch (Exception e) {
+			System.err.println(":err ENCRYPTION FAILED!\n");
+			return null;
+		}
+	}
+		
+	
+	/**
+     * Decrypt a string with AES/CBC mode
+     *
+     * @param message is the cipher text
+     * @return the decrypted plain text
+     */
+	public String CBCdecrypt(String cipherText) {
+		try {
+			// initialize cipher with secret key
+			Cipher cipher = Cipher.getInstance(algorithm);
+			cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivspec);
+		
+			// decrypt cipher text
+			byte[] decoder  = Base64.getDecoder().decode(cipherText);
+			byte[] plainText = cipher.doFinal(decoder);
+			return new String(plainText, "UTF-8");			
+		} catch (Exception err) {
+			System.err.println(":err DECRYPTION FAILED!\n");
+			return null;
+		} 
 	}
 }

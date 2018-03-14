@@ -17,8 +17,8 @@ public class NakovChatClient {
     private static Socket socket;
     private static BufferedReader mIn = null;
     private static PrintWriter mOut = null;
-//    private static String myCipherSuite = "ecdh-secp224r1+X.509+AES_128/GCM/NoPadding//ecdh-secp256r1+x.509+AES_128/GCM/NoPadding";
-    private static String myCipherSuite = "ecdh-secp224r1+X.509+AES/CBC/PKCS5Padding//ecdh-secp256r1+x.509+AES/CBC/PKCS5Padding";
+    private static String myCipherSuite = "ecdh-secp224r1+X.509+AES_128/GCM/NoPadding//ecdh-secp256r1+x.509+AES_128/GCM/NoPadding";	// used AES/GCM
+//    private static String myCipherSuite = "ecdh-secp224r1+X.509+AES/CBC/PKCS5Padding//ecdh-secp256r1+x.509+AES/CBC/PKCS5Padding";		// used AES/CBC
 	private static KeyExchange myKey;
 	private static Encryption cov;
 	private static String keyEstAlgor;	// key establish algorithm
@@ -69,7 +69,7 @@ public class NakovChatClient {
            }
         } catch (IOException ioe) {
         		System.err.println("DISCONNECTION FROM SERVER\n");
-        		System.exit(-1);
+        		System.exit(0);
         }
     }
     
