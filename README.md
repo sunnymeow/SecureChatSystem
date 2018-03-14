@@ -1,6 +1,6 @@
 # Secure Chat System
 
-This is a fully functional secure chat system that allows multiple users to talk to multiple other users simultaneously through a chat hub.
+This is a fully functional secure chat system offers a command line interface that allows multiple users to talk to multiple other users simultaneously through a chat hub.
 
 Full trust is placed in this chat hub as it addresses all network security aspects including : managing conversation sessions, negotiating cipher suites, securely exchanging keys between users using Elliptic-curve Diffie–Hellman (ECDH) key exchange algorithm, verifying digital signatures and certificates, keep track of all authenticated users, encrypting / decrypting messages using symmetric cipher algorithm AES with GCM integrity protection mode. It prevents and detects any security attacks throughout the chat session.
 
