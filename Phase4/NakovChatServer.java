@@ -29,13 +29,23 @@ public class NakovChatServer {
         ServerDispatcher serverDispatcher = new ServerDispatcher();
         
         // before thread starts, generate key pair for server
-        serverDispatcher.makeMyKey();
+        try {
+        		serverDispatcher.makeMyKey();
+        } catch (ErrorException fail) {
+        		System.err.println(fail);
+        		System.exit(-1);
+        }
         
         // link keystore to chathub
         String ksFileName = args[0];
         String password = args[1];
-        serverDispatcher.getMyKeyStore(ksFileName, password);
-        
+        try {
+        		serverDispatcher.getMyKeyStore(ksFileName, password);
+        } catch (ErrorException fail) {
+	    		System.err.println(fail);
+	    		System.exit(-1);
+	    }
+        		
         // start ServerDispatcher thread
         serverDispatcher.start();
 

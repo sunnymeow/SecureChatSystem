@@ -148,7 +148,7 @@ public class Help {
      * linked keystore with corresponding keystoreFileName and password
      * @param the name of keystore file and password for the keystore
      */
-	public static KeyStore linkKeyStore(String keystoreFileName, String password) {
+	public static KeyStore linkKeyStore(String keystoreFileName, String password) throws ErrorException{
 	    char[] pw = password.toCharArray();
 	    KeyStore keystore = null;
 	    
@@ -156,24 +156,25 @@ public class Help {
 		    FileInputStream fIn = new FileInputStream(keystoreFileName);
 		    keystore = KeyStore.getInstance("JKS");
 		    keystore.load(fIn, pw);
+		    return keystore;
 	    } catch (Exception e) {
-	    		System.err.println(":fail KEYSTORE " + keystoreFileName + " FAILED TO LINK TO CHAT HUB SOCKET!\n");
+	    		throw new ErrorException(":fail KEYSTORE " + keystoreFileName + " FAILED TO LINK TO CHAT HUB SOCKET!\n");
 	    }
-	    return keystore;
+
 	}
 	
 	/**
      * get the based64 encoded byte[] certificate
      * @param the keystore and alias for the certificate
      */
-	public static byte[] getCert(KeyStore ks, String alias) {
+	public static byte[] getCert(KeyStore ks, String alias) throws ErrorException {
 		byte[] cert = null;
 		try {
 			cert = ks.getCertificate(alias).getEncoded();
+			return cert;
 		} catch (Exception fail) {
-			System.err.println(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
+			throw new ErrorException(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
 		}
-		return cert;
 	}
 	
 	/**
@@ -182,7 +183,7 @@ public class Help {
      * @param two certificates to be verified
      * @return if matches, return TRUE; otherwise return FALSE
      */
-	public static void certVerify(KeyStore ks, String alias, byte[] received, String integrity) {
+	public static void certVerify(KeyStore ks, String alias, byte[] received, String integrity) throws ErrorException{
 		try {
 			// recover received certificate from byte[]
 			CertificateFactory certFactory = CertificateFactory.getInstance(integrity);
@@ -193,9 +194,9 @@ public class Help {
 			ks.getCertificate(alias).verify(receivedCert.getPublicKey());
 
 		} catch (KeyStoreException fail) {
-			System.err.println(":fail GET CERTIFICATE FOR ALIAS " + alias + " FAILED!\n");
+			throw new ErrorException(":fail GET CERTIFICATE FROM KEYSTORE BY ALIAS FAILED!\n");
 		} catch (Exception fail)	{
-			System.err.println(":fail CERTIFICATES VERIFICATION FOR ALIAS " + alias + " FAILED!\n");
+			throw new ErrorException(":fail CERTIFICATES VERIFICATION BY ALIAS FAILED!\n");
 		}
 	}
 	
@@ -207,8 +208,7 @@ public class Help {
      * @param certByte is the based64 encoded byte[] of certificate
      * @return alias of the certByte
      */
-	public static String getAlias(KeyStore ks, byte[] certByte, String integrity) {
-		String alias = null;
+	public static String getAlias(KeyStore ks, byte[] certByte, String integrity) throws ErrorException{
 		try {	
 			// recover received certificate from byte[]
 			CertificateFactory certFactory = CertificateFactory.getInstance(integrity);
@@ -216,11 +216,10 @@ public class Help {
 			X509Certificate receivedCert = (X509Certificate)certFactory.generateCertificate(in);
 			
 			// get alias from the certificate within keystore
-			alias = ks.getCertificateAlias(receivedCert);
+			return ks.getCertificateAlias(receivedCert);
 		} catch (Exception fail) {
-			System.err.println(":fail CERTIFICATES IS NOT FOUND IN CHATHUB'S KEYSTORE!\n");
+			throw new ErrorException(":fail CERTIFICATES IS NOT FOUND IN CHATHUB'S KEYSTORE!\n");
 		}
-		return alias;
 	}
 	
 	

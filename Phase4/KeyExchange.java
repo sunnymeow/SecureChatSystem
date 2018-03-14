@@ -15,7 +15,7 @@ public class KeyExchange {
      * 
      * @param key pair generator specified parameter
      */
-	public KeyExchange(String keyEstAlgor, String keyEstSpec, String integrity) {
+	public KeyExchange(String keyEstAlgor, String keyEstSpec, String integrity) throws ErrorException{
 		this.keyEstAlgor = keyEstAlgor;
 		this.keyEstSpec = keyEstSpec;
 		this.integrity = integrity;
@@ -32,8 +32,9 @@ public class KeyExchange {
 		    key_private = key_pair.getPrivate();
 		    key_public = key_pair.getPublic();
 		    System.out.println("Public key: " + key_public.toString());
+		    
 		} catch (Exception e) {
-			System.err.println(":fail FAILED TO MAKE KEYEXCHANGE OBJECT\n");
+			throw new ErrorException (":fail FAILED TO MAKE KEYEXCHANGE OBJECT\n");
 		}
 	}
 
@@ -43,7 +44,7 @@ public class KeyExchange {
      * @param algorithm is the key agreement algorithm
      * @param othersPublicKey is the public key from the other side
      */
-	public void doECDH(byte[] receivedPublicKey) {
+	public void doECDH(byte[] receivedPublicKey) throws ErrorException {
 		try {
 			// decoded public key
 			KeyFactory keyFactory = KeyFactory.getInstance("EC");
@@ -64,8 +65,9 @@ public class KeyExchange {
 		    for(int i = 0; i < 16; i++) {
 		        key_secret[i]=oriSecret[oriSecret.length-16+i];
 		    }	
+		    
 		} catch (Exception e) {
-			System.err.println(":fail FAILED TO DO ECDH WITH RECEIVED PUBLIC KEY\n");
+			throw new ErrorException(":fail FAILED TO DO ECDH WITH RECEIVED PUBLIC KEY\n");
 		}
 	}
 	

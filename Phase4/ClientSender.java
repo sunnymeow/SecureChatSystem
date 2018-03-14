@@ -55,11 +55,15 @@ public class ClientSender extends Thread{
     		String ciphertext = null;
         try {
            while (!isInterrupted()) {
-        	   	   // encryption
-               message = getNextMessageFromQueue();
-               ciphertext = mClientInfo.mEncrption.encrypt(message);
-               System.out.println(message);
-               System.out.println("\t(Encrypted into cipher text: " + ciphertext + ")");
+	        	   	try {
+	        	   	   // encryption
+	               message = getNextMessageFromQueue();
+	               ciphertext = mClientInfo.mEncrption.encrypt(message);
+	               System.out.println(message);
+	               System.out.println("\t(Encrypted into cipher text: " + ciphertext + ")");
+	        	   	} catch (ErrorException err) {
+	        	   		mClientInfo.mClientListener.interrupt();
+	        	   	}
                
                // send encrypted message to client socket
                mOut.println(ciphertext);

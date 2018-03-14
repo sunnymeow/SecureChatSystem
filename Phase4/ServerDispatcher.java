@@ -95,18 +95,18 @@ public class ServerDispatcher extends Thread {
 	    	     String toRec = split[0];
 	    	     String receiverAlias = toRec.split(" ")[1];
 	    	     message = split[1];
-	    	     System.out.println(receiverAlias);
-	    	     System.out.println(message);
 	    	     
 	    	     // attach sender alias preceded the message
 	    	     String newMsg = "From " + senderAlias + " : " + message;
+	    	     String feedback = "**** Message has been sent to " + receiverAlias + " ****";
 	    	     
 	    	     if (receiverAlias.toLowerCase().equals("all")) {
+	    	    	 	feedback = "**** Message has been sent to all ****";
+	    	    	 	ClientInfo sender = mClients.get(senderAlias);
+	    	    	 	sender.mClientSender.sendMessage(feedback);
 	    	    	 	sendMessageToAllClients(newMsg);
 	    	     } 
 	    	     else {
-	    	    	 	String feedback = "**** Message has been sent to " + receiverAlias + " ****";
-	    	    	 
 	    	    	 	// receiver alias is not found in client list, send back to sender
 	    	    	 	if (mClients.get(receiverAlias)==null) {
 	    	    	 		newMsg = ":err CAN'T FIND CLIENT ALIAS NAME " + receiverAlias + " IN CHAT HUB CLIENT LIST! PLEASE REDO!";
@@ -145,7 +145,7 @@ public class ServerDispatcher extends Thread {
     }
     
     
-    public void checkCommand(ClientInfo aClientInfo) {
+    public void checkCommand(ClientInfo aClientInfo) throws IOException {
     		Socket socket = aClientInfo.mSocket;
     		String senderIP = socket.getInetAddress().getHostAddress();
         String senderPort = "" + socket.getPort();
@@ -158,7 +158,8 @@ public class ServerDispatcher extends Thread {
     			out = new DataOutputStream(socket.getOutputStream());
             System.out.println("******************* Start command check for " + senderIP + ":" + senderPort + " *******************");   
     		} catch (IOException ioe) {
-            System.err.println(":fail FAILED TO ESTABLISH SOCKET CONNECTION BETWEEN CHAT HUB AND " + senderIP + ":" + senderPort + "\n");
+    			aClientInfo.mSocket.close();
+            throw new IOException(":fail FAILED TO ESTABLISH SOCKET CONNECTION BETWEEN CHAT HUB AND " + senderIP + ":" + senderPort + "\n");
          }
     	
     		// ******************* PHASE 1 initial state ******************* //
@@ -169,7 +170,8 @@ public class ServerDispatcher extends Thread {
 				receivedCipherSuite = in.readUTF();
 				System.out.println("PHASE 1.1 " + receivedCipherSuite);	
 			} catch (IOException err) {
-				System.err.println(":fail NO RESPONSE FROM CLIENT!");
+				aClientInfo.mSocket.close();
+				throw new IOException(":fail NO RESPONSE FROM CLIENT!");
 			}
 				
 			// check whether received command equals to :ka
@@ -177,7 +179,9 @@ public class ServerDispatcher extends Thread {
 			try {
 				Help.commandEqual(ka, ":ka");	
 			} catch (ErrorException fail) {
+				aClientInfo.mSocket.close();
 				System.err.println(fail);
+				throw new IOException();
 			}
 			
 			// check whether received cipher suite include server cipher suite
@@ -185,7 +189,9 @@ public class ServerDispatcher extends Thread {
 			try {
 				Help.findCipherSuite(myCipherSuite, clientCipher);
 			} catch (ErrorException fail) {
+				aClientInfo.mSocket.close();
 				System.err.println(fail);
+				throw new IOException();
 			}
 			
 			finally {
@@ -195,7 +201,8 @@ public class ServerDispatcher extends Thread {
 					out.writeUTF(":kaok "+ myCipherSuite);
 					out.flush();
 				} catch (IOException ioe) {
-			        System.err.println(":fail FAILED TO SEND :kaok CIPHERSUITE TO CLIENT!\n");
+					aClientInfo.mSocket.close();
+					throw new IOException(":fail FAILED TO SEND :kaok CIPHERSUITE TO CLIENT!\n");
 		        }
 				
 				// ***** PHASE 1.3: send :cert based64 encoded certificate *****//
@@ -207,7 +214,12 @@ public class ServerDispatcher extends Thread {
 					out.write(certEncodedMyCert);
 					out.flush();	
 				} catch (IOException fail) {
-					System.err.println(":fail FAILED TO SEND :cert ENCODED CERTIFICATE TO CLIENT!\n");
+					aClientInfo.mSocket.close();
+					throw new IOException(":fail FAILED TO SEND :cert ENCODED CERTIFICATE TO CLIENT!\n");
+				} catch (ErrorException fail) {
+					aClientInfo.mSocket.close();
+					System.err.println(fail);
+					throw new IOException();
 				}
 				
 				// ***** PHASE 1.3: send :ka1 based64 encoded public key *****//
@@ -219,7 +231,8 @@ public class ServerDispatcher extends Thread {
 					out.write(ka1encodedPublic);
 					out.flush();				
 				} catch (IOException fail) {
-					System.err.println(":fail FAILED TO SEND :ka1 ENCODED PUBLIC KEY TO CLIENT!\n");
+					aClientInfo.mSocket.close();
+					throw new IOException(":fail FAILED TO SEND :ka1 ENCODED PUBLIC KEY TO CLIENT!\n");
 				}
 			}
 		}		
@@ -235,15 +248,22 @@ public class ServerDispatcher extends Thread {
 				in.readFully(certEncodedCert);
 				System.out.println("PHASE 3.1 :cert " + certEncodedCert.toString());				
 			} catch (IOException err) {
-				System.err.println(":fail NO RESPONSE FROM SERVER!");
+				aClientInfo.mSocket.close();
+				throw new IOException(":fail NO RESPONSE FROM CLIENT!");
 			}
 			
 			// ***** PHASE 3.1: verify :cert server's encoded certificate ***** //
-			byte[] encodedCert = Help.splitCommand(":cert ", certEncodedCert);
-			String clientAlias = Help.getAlias(myKeyStore, encodedCert, integrity);
-			Help.certVerify(myKeyStore, clientAlias, encodedCert, integrity);
-			System.out.println("PHASE 3.1 :cert " + encodedCert.toString() + " is verified (from " + clientAlias +")");
-			aClientInfo.mAlias = clientAlias;
+			try {
+				byte[] encodedCert = Help.splitCommand(":cert ", certEncodedCert);
+				String clientAlias = Help.getAlias(myKeyStore, encodedCert, integrity);
+				Help.certVerify(myKeyStore, clientAlias, encodedCert, integrity);
+				System.out.println("PHASE 3.1 :cert " + encodedCert.toString() + " is verified (from " + clientAlias +")");
+				aClientInfo.mAlias = clientAlias;
+			} catch (ErrorException fail) {
+				aClientInfo.mSocket.close();
+				System.err.println(fail);
+				throw new IOException();
+			}
 			
 			// ***** PHASE 3.1: receive :ka1 client's encoded public key ***** //
 			byte[] ka1clientPublic = null;
@@ -253,7 +273,8 @@ public class ServerDispatcher extends Thread {
 				in.readFully(ka1clientPublic);
 				System.out.println("PHASE 3.1 :ka1 " + ka1clientPublic.toString());
 			} catch (IOException err) {
-				System.err.println(":fail NO RESPONSE FROM CLIENT!");
+				aClientInfo.mSocket.close();
+				throw new IOException(":fail NO RESPONSE FROM CLIENT!");
 			}
 			
 			// check whether received command equals to :ka1
@@ -261,18 +282,32 @@ public class ServerDispatcher extends Thread {
 			try {
 				Help.commandEqual(ka1, ":ka1 ");
 			} catch (ErrorException fail) {
+				aClientInfo.mSocket.close();
 				System.err.println(fail);
+				throw new IOException();
 			} finally {
 				// ***** PHASE 3.2: generate shared secret ***** //
-				myKey.doECDH(Help.splitCommand(":ka1 ", ka1clientPublic));
-				System.out.println("PHASE 3.2 share key: " + myKey.getSecret());
+				try {
+					myKey.doECDH(Help.splitCommand(":ka1 ", ka1clientPublic));
+					System.out.println("PHASE 3.2 share key: " + myKey.getSecret());
+				} catch (ErrorException fail) {
+					aClientInfo.mSocket.close();
+					System.err.println(fail);
+					throw new IOException();
+				}
 			}		
 		}
 			
 		// ******************* PHASE 4: chat w/ msg encryption ******************* //	
-		// initialize Encryption object
-		aClientInfo.mEncrption = new Encryption(myKey.getSecret(), symCipher);
-		System.out.println("******************* Finish command check for " + senderIP + ":" + senderPort + " *******************");
+		try {
+			// initialize Encryption object
+			aClientInfo.mEncrption = new Encryption(myKey.getSecret(), symCipher);
+			System.out.println("******************* Finish command check for " + senderIP + ":" + senderPort + " *******************");
+		} catch (ErrorException fail) {
+			aClientInfo.mSocket.close();
+			System.err.println(fail);
+			throw new IOException();
+		}
     }
     
     /**
@@ -280,7 +315,7 @@ public class ServerDispatcher extends Thread {
      * 
      * @param the cipher suite sent by client, and ClientInformation
      */
-    public void makeMyKey() {
+    public void makeMyKey() throws ErrorException {
     		myKey = new KeyExchange(keyEstAlgor, keyEstSpec, integrity);
 	}
     
@@ -289,7 +324,7 @@ public class ServerDispatcher extends Thread {
      * 
      * @param the cipher suite sent by client, and ClientInformation
      */
-    public void getMyKeyStore(String keystoreFileName, String password) {
+    public void getMyKeyStore(String keystoreFileName, String password) throws ErrorException {
 		// initialize myAlias from the key store name (alias.jks)
 		String[] temp = keystoreFileName.split("\\.");
 		myAlias = temp[0];

@@ -32,9 +32,14 @@ public class Sender extends Thread {
 				// read input from keyboard
 				message = in.readLine();
 				
-				// encrypt the input plaintext into ciphertext
-				ciphertext = mCov.encrypt(message);
-				System.out.println("\t(Encrypted into cipher text: " + ciphertext + ")");
+				try {
+					// encrypt the input plaintext into ciphertext
+					ciphertext = mCov.encrypt(message);
+					System.out.println("\t(Encrypted into cipher text: " + ciphertext + ")");
+				} catch (ErrorException fail) {
+					System.err.println(fail);
+					System.exit(-1);
+				}
 				
 				// send the ciphertext to chat server through the socket
 				mOut.println(ciphertext);

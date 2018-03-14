@@ -19,15 +19,19 @@ public class Encryption {
      * Initialize the secretKey with keyBytes
      *
      */
-	public Encryption(byte[] secretBytes, String algorithm) {
-		// different key specs initialization with secretBytes 
-		this.algorithm = algorithm;
-		this.secretBytes = secretBytes;
-	    secretKeySpec = new SecretKeySpec(secretBytes, "AES");	
-		ivspec = new IvParameterSpec(iv);				// used for AES/CBC
-		gcmspec = new GCMParameterSpec(TAG,secretBytes);	// used for AES/GCM
-		
-		System.out.println("PHASE 4   shared secret key: " + secretKeySpec);
+	public Encryption(byte[] secretBytes, String algorithm) throws ErrorException {
+		try {
+			// different key specs initialization with secretBytes 
+			this.algorithm = algorithm;
+			this.secretBytes = secretBytes;
+		    secretKeySpec = new SecretKeySpec(secretBytes, "AES");	
+			ivspec = new IvParameterSpec(iv);				// used for AES/CBC
+			gcmspec = new GCMParameterSpec(TAG,secretBytes);	// used for AES/GCM
+			
+			System.out.println("PHASE 4   shared secret key: " + secretKeySpec);
+		} catch (Exception e) {
+			throw new ErrorException(":err FAILED TO CREATE AN ENCRYPTION OBJECT!");
+		}
 	}
 	
 	/**
@@ -36,7 +40,7 @@ public class Encryption {
      * @param message is the plain text
      * @return the encrypted cipher text
      */
-	public String encrypt(String plainText) {		
+	public String encrypt(String plainText) throws ErrorException {		
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
@@ -45,12 +49,11 @@ public class Encryption {
 			// encrypt plain text
 			byte[] cipherText = cipher.doFinal(plainText.getBytes());
 			return Base64.getEncoder().encodeToString(cipherText);
+			
 		} catch (AEADBadTagException e) {
-			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
-			return null;
+			throw new ErrorException(":err MESSAGE INTEGRITY CHECK IN ENCRYPTION FAILED!\n");
 		} catch (Exception e) {
-			System.err.println(":err ENCRYPTION USING " + algorithm + " FAILED!\n");
-			return null;
+			throw new ErrorException(":err ENCRYPTION USING " + algorithm + " FAILED!\n");
 		}
 	}
 	
@@ -60,7 +63,7 @@ public class Encryption {
      * @param message is the cipher text
      * @return the decrypted plain text
      */
-	public String decrypt(String cipherText) {
+	public String decrypt(String cipherText) throws ErrorException{
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
@@ -69,14 +72,13 @@ public class Encryption {
 			// decrypt cipher text
 			byte[] decoder  = Base64.getDecoder().decode(cipherText);
 			byte[] plainText = cipher.doFinal(decoder);
-			return new String(plainText, "UTF-8");			
+			return new String(plainText, "UTF-8");	
+			
 		} catch (AEADBadTagException e) {
-			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
-			return null;
-		} catch (Exception err) {
-			System.err.println(":err DECRYPTION USING " + algorithm + " FAILED!\n");
-			return null;
-		} 
+			throw new ErrorException(":err MESSAGE INTEGRITY CHECK IN DECRYPTION FAILED!\n");
+		} catch (Exception e) {
+			throw new ErrorException(":err DECRYPTION USING " + algorithm + " FAILED!\n");
+		}
 	}
 	
 	/**
@@ -85,7 +87,7 @@ public class Encryption {
      * @param message is the plain text
      * @return the encrypted cipher text
      */
-	public String CBCencrypt(String plainText) {
+	public String CBCencrypt(String plainText) throws ErrorException {
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
@@ -94,12 +96,11 @@ public class Encryption {
 			// encrypt plain text
 			byte[] cipherText = cipher.doFinal(plainText.getBytes());
 			return Base64.getEncoder().encodeToString(cipherText);
+			
 		} catch (AEADBadTagException e) {
-			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
-			return null;
+			throw new ErrorException(":err MESSAGE INTEGRITY CHECK IN ENCRYPTION FAILED!\n");
 		} catch (Exception e) {
-			System.err.println(":err ENCRYPTION USING " + algorithm + " FAILED!\n");
-			return null;
+			throw new ErrorException(":err ENCRYPTION USING " + algorithm + " FAILED!\n");
 		}
 	}
 		
@@ -110,7 +111,7 @@ public class Encryption {
      * @param message is the cipher text
      * @return the decrypted plain text
      */
-	public String CBCdecrypt(String cipherText) {
+	public String CBCdecrypt(String cipherText) throws ErrorException{
 		try {
 			// initialize cipher with secret key
 			Cipher cipher = Cipher.getInstance(algorithm);
@@ -119,13 +120,12 @@ public class Encryption {
 			// decrypt cipher text
 			byte[] decoder  = Base64.getDecoder().decode(cipherText);
 			byte[] plainText = cipher.doFinal(decoder);
-			return new String(plainText, "UTF-8");			
+			return new String(plainText, "UTF-8");	
+			
 		} catch (AEADBadTagException e) {
-			System.err.println(":err MESSAGE INTEGRITY CHECK USING " + algorithm + " FAILED!\n");
-			return null;
-		} catch (Exception err) {
-			System.err.println(":err DECRYPTION USING " + algorithm + " FAILED!\n");
-			return null;
-		} 
+			throw new ErrorException(":err MESSAGE INTEGRITY CHECK IN DECRYPTION FAILED!\n");
+		} catch (Exception e) {
+			throw new ErrorException(":err DECRYPTION USING " + algorithm + " FAILED!\n");
+		}
 	}
 }

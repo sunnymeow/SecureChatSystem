@@ -45,8 +45,13 @@ public class NakovChatClient {
     		// link client to key store
     		String ksFileName = args[0];
     		String password = args[1];
-    		getMyKeyStore(ksFileName, password);
-        
+    		try {
+    			getMyKeyStore(ksFileName, password);
+    		} catch (ErrorException fail) {
+        		System.err.println(fail);
+        		System.exit(-1);
+        }
+    			
         // check command and key exchange
         checkCommand();
 
@@ -59,13 +64,18 @@ public class NakovChatClient {
         try {
            String message = null;
            String ciphertext = null;
-           while ((ciphertext=mIn.readLine()) != null) {        	   		
-        	   		// decrypt input ciphertext
-        	   		message = cov.decrypt(ciphertext);
-			
-				// display received message
-				System.out.println(message);
-				System.out.println("\t(Decrypted from cipher text: " + ciphertext + ")"); 
+           while ((ciphertext=mIn.readLine()) != null) { 
+        	   		try {
+	        	   		// decrypt input ciphertext
+	        	   		message = cov.decrypt(ciphertext);
+				
+					// display received message
+					System.out.println(message);
+					System.out.println("\t(Decrypted from cipher text: " + ciphertext + ")"); 
+        	   		} catch (ErrorException err) {
+        				System.err.println(err);
+        				System.exit(-1);
+        			}
            }
         } catch (IOException ioe) {
         		System.err.println("DISCONNECTION FROM SERVER\n");
@@ -97,6 +107,7 @@ public class NakovChatClient {
 			out.flush();
 		}	catch (IOException ioe) {
            System.err.println(":fail FAILED TO SEND :ka CIPHERSUITE TO SERVER!\n");
+           System.exit(-1);
         }
 		
 		// ******************* PHASE 2: waiting for cipher suite confirmation ******************* //
@@ -108,6 +119,7 @@ public class NakovChatClient {
 				System.out.println("PHASE 2.1 " + receivedCipherSuite);
 			} catch (IOException err) {
 				System.err.println(":fail NO RESPONSE FROM SERVER!\n");
+				System.exit(-1);
 			}
 			
 			// check whether received command equals to :kaok
@@ -116,10 +128,16 @@ public class NakovChatClient {
 				Help.commandEqual(kaok, ":kaok");	
 			} catch (ErrorException fail) {
 				System.err.println(fail);
+				System.exit(-1);
 			}
 			finally {
 				// use the received cipher suite to generate key
-				makeMyKey(Help.getCipherSuite(receivedCipherSuite));
+				try {
+					makeMyKey(Help.getCipherSuite(receivedCipherSuite));	
+				} catch (ErrorException fail) {
+					System.err.println(fail);
+					System.exit(-1);
+				}
 			}
 		}
 		
@@ -135,13 +153,19 @@ public class NakovChatClient {
 				System.out.println("PHASE 3.1 :cert " + certEncodedCert.toString());				
 			} catch (IOException err) {
 				System.err.println(":fail NO RESPONSE FROM SERVER!\n");
+				System.exit(-1);
 			}
 			
 			// ***** PHASE 3.1: verify :cert server's encoded certificate ***** //
-			byte[] encodedCert = Help.splitCommand(":cert ", certEncodedCert);
-			String serverAlias = Help.getAlias(myKeyStore, encodedCert, integrity);
-			Help.certVerify(myKeyStore, serverAlias, encodedCert, integrity);
-			System.out.println("PHASE 3.1 :cert " + encodedCert.toString() + " is verified (from " + serverAlias +")");
+			try {
+				byte[] encodedCert = Help.splitCommand(":cert ", certEncodedCert);
+				String serverAlias = Help.getAlias(myKeyStore, encodedCert, integrity);
+				Help.certVerify(myKeyStore, serverAlias, encodedCert, integrity);
+				System.out.println("PHASE 3.1 :cert " + encodedCert.toString() + " is verified (from " + serverAlias +")");
+			} catch (ErrorException fail) {
+				System.err.println(fail);
+				System.exit(-1);
+			}
 			
 			// ***** PHASE 3.1: receive :ka1 server's encoded public key ***** //
 			byte[] ka1serverPublic = null;
@@ -152,6 +176,7 @@ public class NakovChatClient {
 				System.out.println("PHASE 3.1 :ka1 " + ka1serverPublic.toString());				
 			} catch (IOException err) {
 				System.err.println(":fail NO RESPONSE FROM SERVER!\n");
+				System.exit(-1);
 			}
 			
 			// check whether received command equals to :ka1
@@ -160,20 +185,26 @@ public class NakovChatClient {
 				Help.commandEqual(ka1, ":ka1 ");                                               
 			} catch (ErrorException fail) {
 				System.err.println(fail);
+				System.exit(-1);
 			}
 			
 			finally {
 				// ***** PHASE 2.2: send :cert based64 encoded certificate *****//
-				byte[] EncodedMyCert = Help.getCert(myKeyStore, myAlias);
-				byte[] certEncodedMyCert = Help.addCommand(":cert ", EncodedMyCert);
-				System.out.println("PHASE 2.2 :cert " + EncodedMyCert.toString());
 				try {
+					byte[] EncodedMyCert = Help.getCert(myKeyStore, myAlias);
+					byte[] certEncodedMyCert = Help.addCommand(":cert ", EncodedMyCert);
+					System.out.println("PHASE 2.2 :cert " + EncodedMyCert.toString());
+		
 					out.writeInt(certEncodedMyCert.length);
 					out.write(certEncodedMyCert);
 					out.flush();	
-				}	catch (IOException ioe) {
+				} catch (IOException ioe) {
 		           System.err.println(":fail FAILED TO SEND :cert ENCODED CERTIFICATED TO SERVER!\n");
-		        }
+		           System.exit(-1);
+		        } catch (ErrorException fail) {
+					System.err.println(fail);
+					System.exit(-1);
+				}
 				
 				// ***** PHASE 2.2: send :ka1 based64 encoded public key ***** //
 				byte[] encodedPublic = myKey.getEncodedPublic();
@@ -185,19 +216,29 @@ public class NakovChatClient {
 					out.flush();
 				} catch (IOException ioe) {
 		           System.err.println(":fail FAILED TO SEND :ka1 ENCODED PUBLIC KEY TO SERVER!");
+		           System.exit(-1);
 		        }
 
 				// ***** PHASE 3.2: generate shared secret ***** //
-				myKey.doECDH(Help.splitCommand(":ka1 ", ka1serverPublic));
-				System.out.println("PHASE 3.2 share key: " + myKey.getSecret());
+				try {
+					myKey.doECDH(Help.splitCommand(":ka1 ", ka1serverPublic));
+					System.out.println("PHASE 3.2 share key: " + myKey.getSecret());
+				} catch (ErrorException fail) {
+					System.err.println(fail);
+					System.exit(-1);
+				}
 			}
 		}		
 		
 		// ******************* PHASE 4: chat w/ msg encryption ******************* //
 		// initialize Encryption object
-		cov = new Encryption(myKey.getSecret(), symCipher);
-		System.out.println("******************* Finish command check for " + senderIP + ":" + senderPort + " *******************");
-		
+		try {
+			cov = new Encryption(myKey.getSecret(), symCipher);
+			System.out.println("******************* Finish command check for " + senderIP + ":" + senderPort + " *******************");
+		} catch (ErrorException fail) {
+			System.err.println(fail);
+			System.exit(-1);
+		}
     }
     
     /**
@@ -205,7 +246,7 @@ public class NakovChatClient {
      * 
      * @param the cipher suite sent by server
      */
-	public static void makeMyKey(String receivedCipherSuite) {
+	public static void makeMyKey(String receivedCipherSuite) throws ErrorException {
 		// separate cipher Suite tokens
 		String[] trim1 = receivedCipherSuite.split("\\+");	// separate tokens
 		String[] trim2 = trim1[0].split("\\-");				// separate algorithm and spec. parameters
@@ -225,7 +266,7 @@ public class NakovChatClient {
      * 
      * @param the cipher suite sent by client, and ClientInformation
      */
-    public static void getMyKeyStore(String keystoreFileName, String password) {
+    public static void getMyKeyStore(String keystoreFileName, String password) throws ErrorException {
 		// initialize myAlias from the key store name (alias.jks)
 		String[] temp = keystoreFileName.split("\\.");
 		myAlias = temp[0];

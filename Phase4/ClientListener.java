@@ -29,10 +29,14 @@ public class ClientListener extends Thread {
         try {
 		   while (!isInterrupted()) {
 			   	// decrypted message read from client socket
+			   try {
 				ciphertext = mIn.readLine();
 				message = mClientInfo.mEncrption.decrypt(ciphertext);
 				System.out.println(message);    				
-				System.out.println("\t(Decrypted from cipher text: " + ciphertext + ")");			
+				System.out.println("\t(Decrypted from cipher text: " + ciphertext + ")");	
+			   } catch (ErrorException err) {
+				   mClientInfo.mClientSender.interrupt();
+			   }
 		   		
 		         if (message == null || message.equals("exit"))
 		              break;
