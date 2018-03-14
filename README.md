@@ -16,11 +16,7 @@ git clone git@github.com:sunnymeow/SecureChatSystem.git
 
 Our development environment :
 
----
-
-git version 2.7.4 (Apple Git-66)
-
----
+* git version 2.7.4 (Apple Git-66)
 
 * java version "1.8.0_73"
 
@@ -40,7 +36,7 @@ Open one terminal, and navigate into the project folder.
 cd [PATH/TO/SecureChatSystem]
 ```
 
-Mmake sure all files needed are there, including all java. And .jks files.
+Make sure all files needed are there, including all java. And .jks files.
 
 ```
 ls
@@ -151,64 +147,81 @@ removes all the .class files.
 
 ## What Each Class Does
 
-* NakovChatServer.java
+**NakovChatServer.java**
 
-This is entry point for the program because it opens a serversocket. It infinitely accepts client socket connections, and add accepted clients into ServerDispatcher client list.
+---
 
-* ClientInfo.java
+This is entry point for the program because it opens a serversocket. It infinitely accepts client socket connections, and add accepted clients into the client list stored in ServerDispatcher class.
 
-Help server to hold information about a client.
+**ClientInfo.java**
 
-* ServerDispatcher
+---
 
-Has a message queue and a ClientInfo hash map. The message queue manages all messages sent from clients and dispatches them to desired clients socket. The ClientInfo hash map keeps track of all connected clients.
+A simple class that helps server to hold information about a client.
 
-* ClientSender.java
+**ServerDispatcher**
 
-Proposed to send messages from server socket to the client socket. Outgoing messages are popped from ServerDispatcher’s message queue, then they are stored in ClientSender’s message queue. When ClientSender’s message queue is empty, wait for the new message to arrive. Once ClientSender’s message queue receives message, encrypts the messatewith server’s shared secret key and sends the ciphertext to the client socket.
+---
 
-* ClientListener.java
+This class has a message queue and a hash map structure that stores client information. The message queue manages all messages sent from the clients and dispatches them to desired client socket. The hash map keeps track of all connected, hence registered and authenticated clients.
 
-Receives client messages from client socket, decrypts it with server’s shared secret key, and add them to the message queue in ServerDispatcher.
+**ClientSender.java**
 
-* NakovChatClient.java
+---
 
-Creates client socket that connects to server socket. Reads messages sent from server socket, decrypts the ciphertexts with client’s shared secret key, and displays the plaintexts on standard output.
+This class handles sending messages from server socket to the client socket. Outgoing messages are popped from ServerDispatcher’s message queue, then they are stored in ClientSender’s message queue. In the case that ClientSender’s message queue is empty,  ClientSender will wait for the new message to arrive. Once ClientSender’s message queue receives message, it encrypts the messages with server’s shared secret key and sends the ciphertext to the client socket.
 
-* Sender.java
+**ClientListener.java**
 
-Reads messages from the keyboard input, encrypts them into ciphertext with client’s shared secret key, and sends them to the server socket.
+---
 
-* Help.java
+This class receives client messages from client socket, decrypts the messages with server’s shared secret key, and add them to the message queue in ServerDispatcher class.
 
-Contains various helper functions to make conversation more reliable and convenient. It can be used by both client and server. For example, method commandEqual is purposed to check for matching byte[] and string. Method findCipherSuit is dedigned to look for serverCipher within receivedCipher. If serverCipher not found, throw ErrorException.
+**NakovChatClient.java**
 
-* KeyExchange.java
+---
 
-Contains methods using ECDH to generate key pairs and construct the shared secret key.
+This class creates client socket that connects to the server socket. It also reads messages sent from the server socket, decrypts the ciphertexts with client’s shared secret key, and displays the plaintexts on standard output.
 
-* Encryption.java
+**Sender.java**
 
-Used either AES/CBC or AES/GCM mode cipher to encrypt and decrypt messages.
+---
 
-* ErrorException.java
+Sender class reads messages from keyboard input, encrypts them into ciphertext with client’s shared secret key, and sends them to the server socket.
 
-used to catch errors.
+**Help.java**
 
+---
 
-## Contributing
+This class is a collection of various helper functions that are used by both client and server. For example, method "commandEqual" is used to checks whether a byte array and a string are "equal" through Base64 encoding / decoding. Another example might be that method "findCipherSuite" handles negotiation of cipher suites.
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+**KeyExchange.java**
+
+---
+
+This class contains methods that implement ECDH key exchange algorithm to generate key pairs and construct the shared secret key.
+
+**Encryption.java**
+
+---
+
+This class uses symmetric cipher algorithm AES, with either CBC or GCM mode, to encrypt and decrypt messages. Shared secret key used by AES algorithm comes from ECDH key exchange.
+
+**ErrorException.java**
+
+---
+
+This class handles all exceptions that were thrown.
 
 ## Authors
 
 * **(c) Svetlin Nakov, 2002** - *Initial work* - [Nakov Chat Server](http://www.nakov.com)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/sunnymeow/SecureChatSystem/contributors) who participated in this project.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 
