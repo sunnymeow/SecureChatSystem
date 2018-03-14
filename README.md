@@ -1,8 +1,8 @@
 # Secure Chat System
 
-This is a fully functional secure chat system offers a command line interface that allows multiple users to talk to multiple other users simultaneously through a chat hub.
+This is a fully functional secure chat system that offers a command line interface that allows multiple users to talk to multiple other users simultaneously through a chat server.
 
-Full trust is placed in this chat hub as it addresses all network security aspects including : managing conversation sessions, negotiating cipher suites, securely exchanging keys between users using Elliptic-curve Diffie–Hellman (ECDH) key exchange algorithm, verifying digital signatures and certificates, keep track of all authenticated users, encrypting / decrypting messages using symmetric cipher algorithm AES with GCM integrity protection mode. It prevents and detects any security attacks throughout the chat session.
+Full trust is placed in this chat hub as it addresses all network security aspects including : managing conversation sessions, negotiating cipher suites, securely exchanging keys between users using Elliptic-curve Diffie–Hellman (ECDH) key exchange algorithm, verifying digital signatures and certificates, keeping track of all authenticated users, encrypting / decrypting messages using symmetric cipher algorithm AES with GCM integrity protection mode. It prevents and detects any security attacks throughout the chat session.
 
 ## Getting Started
 
@@ -16,7 +16,17 @@ git clone git@github.com:sunnymeow/SecureChatSystem.git
 
 Our development environment :
 
-git version 2.7.4 (Apple Git-66), java version "1.8.0_73", Java(TM) SE Runtime Environment (build 1.8.0_73-b02), Java HotSpot(TM) 64-Bit Server VM (build 25.73-b02, mixed mode)
+---
+
+git version 2.7.4 (Apple Git-66)
+
+---
+
+* java version "1.8.0_73"
+
+* Java(TM) SE Runtime Environment (build 1.8.0_73-b02)
+
+* Java HotSpot(TM) 64-Bit Server VM (build 25.73-b02, mixed mode)
 
 As long as you have git and JDK installed, you are fine.
 
