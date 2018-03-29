@@ -4,6 +4,10 @@ This is a fully functional secure chat system that offers a command line interfa
 
 Full trust is placed in this chat hub as it addresses all network security aspects including : managing conversation sessions, negotiating cipher suites, securely exchanging keys between users using Elliptic-curve Diffie–Hellman (ECDH) key exchange algorithm, verifying digital signatures and certificates, keeping track of all authenticated users, encrypting / decrypting messages using symmetric cipher algorithm AES with GCM integrity protection mode. It prevents and detects any security attacks throughout the chat session.
 
+## Sample Run
+
+![SampleRun](https://github.com/sunnymeow/SecureChatSystem/blob/master/res/sampleRun.png)
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
